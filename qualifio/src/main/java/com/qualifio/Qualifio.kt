@@ -6,16 +6,15 @@ import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.net.toUri
+import androidx.core.os.bundleOf
+import com.qualifio.internal.logger
+import com.qualifio.internal.utils.applicationInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
-import androidx.core.net.toUri
-import androidx.core.os.bundleOf
-import com.qualifio.internal.SecureTokenGeneratorUnavailableException
-import com.qualifio.internal.logger
-import com.qualifio.internal.utils.applicationInfo
 
 public object Qualifio {
     private val coroutineScope: CoroutineScope by lazy {
@@ -87,10 +86,9 @@ public object Qualifio {
             try {
                 val token = listener?.generateSecureToken(url)
                 if (token != null) {
+                    logger.debug("Setting the provided secure token.")
                     url = url.buildUpon().appendQueryParameter("qual_token", token).build()
                 }
-            } catch (_: SecureTokenGeneratorUnavailableException) {
-                logger.debug("Secure token generator not configured.")
             } catch (e: Exception) {
                 logger.error("Failed to acquire a secure token.", e)
             }

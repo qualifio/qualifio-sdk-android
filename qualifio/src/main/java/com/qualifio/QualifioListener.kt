@@ -8,11 +8,10 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 public interface QualifioListener {
-    // TODO: the return needs to be nullable
-    public suspend fun generateSecureToken(url: Uri): String {
+    public suspend fun generateSecureToken(url: Uri): String? {
         return suspendCancellableCoroutine { continuation ->
-            generateSecureToken(url, object : QualifioCallback<String> {
-                override fun onSuccess(result: String) {
+            generateSecureToken(url, object : QualifioCallback<String?> {
+                override fun onSuccess(result: String?) {
                     continuation.resume(result)
                 }
 
@@ -23,8 +22,8 @@ public interface QualifioListener {
         }
     }
 
-    public fun generateSecureToken(url: Uri, callback: QualifioCallback<String>) {
-        callback.onFailure(SecureTokenGeneratorUnavailableException())
+    public fun generateSecureToken(url: Uri, callback: QualifioCallback<String?>) {
+        callback.onSuccess(null)
     }
 
     public fun customizeCustomTabsIntent(builder: CustomTabsIntent.Builder) {
