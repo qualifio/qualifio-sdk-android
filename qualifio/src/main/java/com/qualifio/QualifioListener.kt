@@ -2,7 +2,6 @@ package com.qualifio
 
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
-import com.qualifio.internal.SecureTokenGeneratorUnavailableException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
