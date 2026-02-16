@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.konan.properties.loadProperties
 
 plugins {
     alias(apps.plugins.android.application)
@@ -9,6 +10,8 @@ plugins {
     alias(apps.plugins.google.ksp)
     alias(apps.plugins.kotlin.serialization)
 }
+
+val properties = loadProperties("local.properties")
 
 android {
     namespace = "com.qualifio.sample"
@@ -23,6 +26,8 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
+        resValue("string", "secure_token_secret", properties.getProperty("secure.token.secret"))
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -34,7 +39,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -74,7 +79,6 @@ dependencies {
 
     implementation(apps.kotlinx.serialization.json)
     implementation(apps.auth0.jwt)
-
 
     implementation(project(":qualifio"))
 }
