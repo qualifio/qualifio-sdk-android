@@ -1,9 +1,9 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    alias(libs.plugins.android.application)
+    alias(apps.plugins.android.application)
     alias(apps.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
+    alias(apps.plugins.kotlin.compose)
     // alias(libs.plugins.qualifio.services)
     alias(apps.plugins.google.hilt)
     alias(apps.plugins.google.ksp)

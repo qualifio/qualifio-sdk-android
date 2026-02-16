@@ -1,4 +1,5 @@
 [versions]
+android-application = "8.13.2"
 kotlin = "2.2.20"
 androidx-activity-compose = "1.12.4"
 androidx-compose-bom = "2026.02.00"
@@ -39,7 +40,9 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 auth0-jwt = { module = "com.auth0:java-jwt", version.ref = "auth0-jwt"}
 
 [plugins]
+android-application = { id = "com.android.application", version.ref = "android-application" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 google-hilt = { id = "com.google.dagger.hilt.android", version.ref = "google-hilt"}
 google-ksp = { id = "com.google.devtools.ksp", version.ref = "google-ksp" }
