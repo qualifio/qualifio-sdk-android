@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-val Context.dataStore by preferencesDataStore(name = "settings")
+val Context.dataStore by preferencesDataStore(name = "com.qualifio.sample.datastore")
 private val KEY_IS_CONFIGURATION_FINISHED = booleanPreferencesKey("is_configuration_finished")
 private val KEY_DOMAIN = stringPreferencesKey("configuration_domain")
 private val KEY_USE_SECURE_TOKEN = booleanPreferencesKey("use_secure_token")
@@ -25,9 +25,8 @@ private val KEY_SECURE_TOKEN_FIELDS = stringPreferencesKey("secure_token_fields"
 
 class SampleDataStore @Inject constructor(
     private val application: Application,
+    private val moshi: Moshi,
 ) {
-    private val moshi: Moshi = Moshi.Builder().build()
-
     val isConfigurationFinishedStream: Flow<Boolean> =
         application.dataStore.data.map { preferences ->
             preferences[KEY_IS_CONFIGURATION_FINISHED] ?: false
