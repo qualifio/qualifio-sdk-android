@@ -3,6 +3,7 @@ package com.qualifio.sample.ui.screens.configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,12 +27,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.qualifio.Qualifio
 import com.qualifio.QualifioConfiguration
 import com.qualifio.sample.R
+import com.qualifio.sample.ui.theme.Typography
 
 @Composable
 fun ConfigurationScreen(
@@ -38,7 +42,10 @@ fun ConfigurationScreen(
 ) {
     val context = LocalContext.current
     var domainInput by remember { mutableStateOf("") }
-    var isError by remember { mutableStateOf(false) }
+    var secretInput by remember { mutableStateOf("")}
+    var isDomainError by remember { mutableStateOf(false) }
+    var isSecretError by remember { mutableStateOf(false) }
+    var isConfiguringSecureTokenSecret by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -61,11 +68,11 @@ fun ConfigurationScreen(
             value = domainInput,
             onValueChange = {
                 domainInput = it
-                if (isError && it.isNotBlank()) {
-                    isError = false
+                if (isDomainError && it.isNotBlank()) {
+                    isDomainError = false
                 }
             },
-            isError = isError,
+            isError = isDomainError,
             singleLine = true,
             label = {
                 Text(
@@ -73,7 +80,7 @@ fun ConfigurationScreen(
                 )
             },
             supportingText = {
-                if (isError) {
+                if (isDomainError) {
                     Text(
                         text = stringResource(R.string.configuration_invalid_domain),
                         color = MaterialTheme.colorScheme.error,
@@ -82,9 +89,66 @@ fun ConfigurationScreen(
             },
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.None,
+                keyboardType = KeyboardType.Uri,
                 autoCorrectEnabled = false,
             ),
         )
+
+        Spacer(modifier = Modifier)
+
+        Row(
+            modifier = Modifier.fillMaxWidth(0.85f),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_preferences_secure_token_label),
+                style = Typography.bodyLarge,
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Switch(
+                checked = isConfiguringSecureTokenSecret,
+                onCheckedChange = { enabled ->
+                    isConfiguringSecureTokenSecret = enabled
+                },
+            )
+        }
+
+        if (isConfiguringSecureTokenSecret) {
+            Spacer(modifier = Modifier)
+
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(0.85f),
+                value = secretInput,
+                onValueChange = {
+                    secretInput = it
+                    if (isSecretError && it.isNotBlank()) {
+                        isSecretError = false
+                    }
+                },
+                isError = isSecretError,
+                singleLine = true,
+                label = {
+                    Text(
+                        text = stringResource(R.string.configuration_secret_input),
+                    )
+                },
+                supportingText = {
+                    if (isSecretError) {
+                        Text(
+                            text = stringResource(R.string.configuration_invalid_secret),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Uri,
+                    autoCorrectEnabled = false,
+                ),
+            )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -92,7 +156,12 @@ fun ConfigurationScreen(
             modifier = Modifier.fillMaxWidth(0.85f),
             onClick = {
                 if (!viewModel.validateDomain(domainInput)) {
-                    isError = true
+                    isDomainError = true
+                    return@Button
+                }
+
+                if(isConfiguringSecureTokenSecret && secretInput.isBlank()) {
+                    isSecretError = true
                     return@Button
                 }
 
@@ -101,7 +170,11 @@ fun ConfigurationScreen(
                     configuration = QualifioConfiguration(domainInput),
                 )
 
-                viewModel.updateDomain(domainInput)
+                if (isConfiguringSecureTokenSecret) {
+                    viewModel.updateConfiguration(domainInput, secretInput)
+                } else {
+                    viewModel.updateConfiguration(domainInput, null)
+                }
             },
             content = {
                 Text(

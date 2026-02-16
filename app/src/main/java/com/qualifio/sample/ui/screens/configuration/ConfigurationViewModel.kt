@@ -14,9 +14,12 @@ private val DOMAIN_REGEX =
 class ConfigurationViewModel @Inject constructor(
     private val dataStore: SampleDataStore
 ): ViewModel() {
-    fun updateDomain(domain: String) {
+    fun updateConfiguration(domain: String, secret: String?) {
         viewModelScope.launch {
             dataStore.updateDomain(domain)
+            if(secret != null) {
+                dataStore.updateSecureTokenSecret(secret)
+            }
             dataStore.updateIsConfigurationFinished(true)
         }
     }
