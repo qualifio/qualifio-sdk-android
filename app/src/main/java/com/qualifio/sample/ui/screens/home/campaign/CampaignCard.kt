@@ -33,7 +33,6 @@ import com.qualifio.sample.ui.theme.Typography
 @Composable
 fun CampaignCard() {
     var text by remember { mutableStateOf("") }
-    var isError by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -66,11 +65,7 @@ fun CampaignCard() {
                 value = text,
                 onValueChange = {
                     text = it
-                    if (isError && it.isNotBlank()) {
-                        isError = false
-                    }
                 },
-                isError = isError,
                 label = {
                     Text(
                         text = stringResource(R.string.home_campaign_input),
@@ -87,7 +82,11 @@ fun CampaignCard() {
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    Qualifio.launchCampaign(text)
+                    if (text.isBlank()) {
+                        Qualifio.launchCampaign()
+                    } else {
+                        Qualifio.launchCampaign(text)
+                    }
                 },
                 content = {
                     Text(
