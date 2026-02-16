@@ -13,25 +13,12 @@ import javax.inject.Inject
 class PreferencesViewModel @Inject constructor(
     private val dataStore: SampleDataStore,
 ) : ViewModel() {
-    val useSecureToken = dataStore.useSecureTokenStream
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            false,
-        )
-
     val showCampaignAtLaunch = dataStore.showCampaignAtLaunchStream
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5000),
             true,
         )
-
-    fun updateUseSecureToken(enabled: Boolean) {
-        viewModelScope.launch {
-            dataStore.updateUseSecureToken(enabled)
-        }
-    }
 
     fun updateShowCampaignAtLaunch(enabled: Boolean) {
         viewModelScope.launch {

@@ -16,8 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.qualifio.sample.BuildConfig
 import com.qualifio.sample.ui.screens.settings.configuration.ConfigurationCard
 import com.qualifio.sample.ui.screens.settings.preferences.PreferencesCard
-import com.qualifio.sample.ui.screens.settings.secure_token_encryption.SecureTokenEncryptionCard
-import com.qualifio.sample.ui.screens.settings.secure_token_fields.SecureTokenFieldsCard
+import com.qualifio.sample.ui.screens.settings.secure_token.SecureTokenCard
 import com.qualifio.sample.ui.theme.SampleTheme
 
 @Composable
@@ -31,9 +30,7 @@ internal fun SettingsScreen(
     ) {
         ConfigurationCard()
 
-        SecureTokenEncryptionCard()
-
-        SecureTokenFieldsCard(onSecureTokenFieldsClick)
+        SecureTokenCard { onSecureTokenFieldsClick() }
 
         PreferencesCard()
 

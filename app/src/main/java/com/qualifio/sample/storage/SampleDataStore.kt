@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.qualifio.sample.R
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +22,7 @@ private val KEY_USE_SECURE_TOKEN = booleanPreferencesKey("use_secure_token")
 private val KEY_SHOW_CAMPAIGN_AT_LAUNCH = booleanPreferencesKey("show_campaign_at_launch")
 private val KEY_SECURE_TOKEN_ALGORITHM = stringPreferencesKey("secure_token_algorithm")
 private val KEY_SECURE_TOKEN_SECRET = stringPreferencesKey("secure_token_secret")
+private val KEY_SECURE_TOKEN_SUBJECT = stringPreferencesKey("secure_token_subject")
 private val KEY_SECURE_TOKEN_FIELDS = stringPreferencesKey("secure_token_fields")
 
 class SampleDataStore @Inject constructor(
@@ -54,7 +56,12 @@ class SampleDataStore @Inject constructor(
 
     val secureTokenSecretStream: Flow<String> =
         application.dataStore.data.map { preferences ->
-            preferences[KEY_SECURE_TOKEN_SECRET] ?: "8uJ5FVQb\$fzR!ypskjnzfqojzeoijfoai"
+            preferences[KEY_SECURE_TOKEN_SECRET] ?: application.getString(R.string.secure_token_secret)
+        }
+
+    val secureTokenSubjectStream: Flow<String> =
+        application.dataStore.data.map { preferences ->
+            preferences[KEY_SECURE_TOKEN_SUBJECT] ?: "1234"
         }
 
     val secureTokenFieldsStream: Flow<Map<String, String>?> =
@@ -99,6 +106,18 @@ class SampleDataStore @Inject constructor(
     suspend fun updateShowCampaignAtLaunch(enabled: Boolean) {
         application.dataStore.edit { preferences ->
             preferences[KEY_SHOW_CAMPAIGN_AT_LAUNCH] = enabled
+        }
+    }
+
+    suspend fun updateSecureTokenSecret(secret: String) {
+        application.dataStore.edit { preferences ->
+            preferences[KEY_SECURE_TOKEN_SECRET] = secret
+        }
+    }
+
+    suspend fun updateSecureTokenSubject(subject: String) {
+        application.dataStore.edit { preferences ->
+            preferences[KEY_SECURE_TOKEN_SUBJECT] = subject
         }
     }
 

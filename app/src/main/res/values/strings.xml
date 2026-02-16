@@ -15,15 +15,16 @@
 
     <string name="settings_configuration_title">Configuration</string>
     <string name="settings_configuration_domain_label">Domain</string>
-    <string name="settings_secure_token_fields_title">Secure Token Fields</string>
+
+    <string name="secure_token_title">Secure Token</string>
+    <string name="secure_token_secret_label">Secret</string>
+    <string name="secure_token_algorithm_label">Algorithm</string>
+    <string name="secure_token_subject_label">Subject</string>
+    <string name="secure_token_fields_title">Secure Token Fields</string>
 
     <string name="settings_preferences_title">Preferences</string>
     <string name="settings_preferences_secure_token_label">Use secure token</string>
     <string name="settings_preferences_campaign_launch_label">Show campaign at launch</string>
-
-    <string name="secure_token_encryption_title">Secure Token Encryption</string>
-    <string name="secure_token_encryption_secret_label">Secret</string>
-    <string name="secure_token_encryption_algorithm_label">Algorithm</string>
 
     <string name="secure_token_fields_key_label">Key</string>
     <string name="secure_token_fields_value_label">Value</string>

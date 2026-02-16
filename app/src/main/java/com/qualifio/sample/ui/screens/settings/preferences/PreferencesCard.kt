@@ -28,7 +28,6 @@ import com.qualifio.sample.ui.theme.Typography
 fun PreferencesCard(
     viewModel: PreferencesViewModel = hiltViewModel(),
 ) {
-    val useSecurityKey by viewModel.useSecureToken.collectAsState()
     val showCampaignAtLaunch by viewModel.showCampaignAtLaunch.collectAsState()
 
     Card(
@@ -54,25 +53,6 @@ fun PreferencesCard(
                 Text(
                     text = stringResource(R.string.settings_preferences_title),
                     style = Typography.bodyLarge,
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.settings_preferences_secure_token_label),
-                    style = Typography.bodyLarge,
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Switch(
-                    checked = useSecurityKey,
-                    onCheckedChange = { enabled ->
-                        viewModel.updateUseSecureToken(enabled)
-                    },
                 )
             }
 
