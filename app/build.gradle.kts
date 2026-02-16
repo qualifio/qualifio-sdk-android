@@ -28,8 +28,8 @@ android {
 
         buildConfigField(
             "String",
-            "secure_token_secret",
-            properties.getProperty("secure.token.secret") ?: "\"\"",
+            "SECURE_TOKEN_SECRET",
+            "\"${properties.getProperty("secure.token.secret") ?: ""}\"",
         )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

@@ -45,11 +45,11 @@ fun ConfigurationScreen(
     val defaultDomain = stringResource(R.string.qualifio_services_domain)
 
     var domainInput by remember { mutableStateOf(defaultDomain) }
-    var secretInput by remember { mutableStateOf(BuildConfig.secure_token_secret) }
+    var secretInput by remember { mutableStateOf(BuildConfig.SECURE_TOKEN_SECRET) }
     var isDomainError by remember { mutableStateOf(false) }
     var isSecretError by remember { mutableStateOf(false) }
     var useSecureToken by remember {
-        mutableStateOf(BuildConfig.secure_token_secret.isNotBlank())
+        mutableStateOf(BuildConfig.SECURE_TOKEN_SECRET.isNotBlank())
     }
 
     Column(
