@@ -26,6 +26,10 @@
         <meta-data
             android:name="com.qualifio.debug_logging_enabled"
             android:value="true" />
+
+        <meta-data
+            android:name="com.qualifio.auto_configuration_enabled"
+            android:value="false" />
     </application>
 
 </manifest>

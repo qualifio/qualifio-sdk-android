@@ -2,9 +2,12 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    alias(apps.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.qualifio.services)
+    // alias(libs.plugins.qualifio.services)
+    alias(apps.plugins.google.hilt)
+    alias(apps.plugins.google.ksp)
+    alias(apps.plugins.kotlin.serialization)
 }
 
 android {
@@ -44,24 +47,34 @@ android {
             jvmTarget = JvmTarget.JVM_11
         }
     }
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.graphics)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation(apps.androidx.core.ktx)
+    implementation(apps.androidx.lifecycle.runtime.ktx)
+    implementation(apps.androidx.activity.compose)
+    implementation(platform(apps.androidx.compose.bom))
+    implementation(apps.bundles.androidx.compose.ui)
+    implementation(apps.androidx.compose.material3)
+    implementation(apps.androidx.datastore)
+    implementation(apps.androidx.lifecycle.viewModel.compose)
+    implementation(apps.bundles.androidx.navigation3)
+
+    implementation(apps.moshi.kotlin)
+    implementation(apps.moshi.adapters)
+    ksp(apps.moshi.codegen)
+
+    implementation(apps.google.hilt)
+    implementation(apps.androidx.hilt.navigation.compose)
+    ksp(apps.google.hilt.compiler)
+    ksp(apps.androidx.hilt.compiler)
+
+    implementation(apps.kotlinx.serialization.json)
+    implementation(apps.auth0.jwt)
+
 
     implementation(project(":qualifio"))
 }
