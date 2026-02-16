@@ -5,7 +5,7 @@ plugins {
     alias(apps.plugins.android.application)
     alias(apps.plugins.kotlin.android)
     alias(apps.plugins.kotlin.compose)
-    // alias(libs.plugins.qualifio.services)
+    alias(apps.plugins.qualifio.services)
     alias(apps.plugins.google.hilt)
     alias(apps.plugins.google.ksp)
     alias(apps.plugins.kotlin.serialization)
@@ -26,7 +26,11 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
-        resValue("string", "secure_token_secret", properties.getProperty("secure.token.secret"))
+        buildConfigField(
+            "String",
+            "secure_token_secret",
+            properties.getProperty("secure.token.secret") ?: "\"\"",
+        )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

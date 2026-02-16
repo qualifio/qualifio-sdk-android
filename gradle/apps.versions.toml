@@ -13,6 +13,7 @@ google-ksp = "2.2.20-2.0.4"
 kotlinx-serialization = "1.10.0"
 moshi = "1.15.2"
 auth0-jwt = "4.5.0"
+qualifio-services = "1.0.0"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity-compose" }
@@ -36,7 +37,7 @@ google-hilt-compiler = {  module = "com.google.dagger:hilt-android-compiler", ve
 moshi-adapters = { module = "com.squareup.moshi:moshi-adapters", version.ref = "moshi" }
 moshi-codegen = { module = "com.squareup.moshi:moshi-kotlin-codegen", version.ref = "moshi" }
 moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "kotlinx-serialization" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 auth0-jwt = { module = "com.auth0:java-jwt", version.ref = "auth0-jwt"}
 
 [plugins]
@@ -46,6 +47,7 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 google-hilt = { id = "com.google.dagger.hilt.android", version.ref = "google-hilt"}
 google-ksp = { id = "com.google.devtools.ksp", version.ref = "google-ksp" }
+qualifio-services = { id = "com.qualifio.gradle.qualifio-services", version.ref = "qualifio-services" }
 
 [bundles]
 androidx-compose-ui = ["androidx-compose-ui", "androidx-compose-ui-graphics", "androidx-compose-ui-tooling", "androidx-compose-ui-tooling-preview"]

@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.qualifio.Qualifio
 import com.qualifio.QualifioConfiguration
+import com.qualifio.sample.BuildConfig
 import com.qualifio.sample.R
 import com.qualifio.sample.ui.theme.Typography
 
@@ -41,11 +42,15 @@ fun ConfigurationScreen(
     viewModel: ConfigurationViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    var domainInput by remember { mutableStateOf("") }
-    var secretInput by remember { mutableStateOf("")}
+    val defaultDomain = stringResource(R.string.qualifio_services_domain)
+
+    var domainInput by remember { mutableStateOf(defaultDomain) }
+    var secretInput by remember { mutableStateOf(BuildConfig.secure_token_secret) }
     var isDomainError by remember { mutableStateOf(false) }
     var isSecretError by remember { mutableStateOf(false) }
-    var isConfiguringSecureTokenSecret by remember { mutableStateOf(false) }
+    var useSecureToken by remember {
+        mutableStateOf(BuildConfig.secure_token_secret.isNotBlank())
+    }
 
     Column(
         modifier = Modifier
@@ -108,14 +113,14 @@ fun ConfigurationScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Switch(
-                checked = isConfiguringSecureTokenSecret,
+                checked = useSecureToken,
                 onCheckedChange = { enabled ->
-                    isConfiguringSecureTokenSecret = enabled
+                    useSecureToken = enabled
                 },
             )
         }
 
-        if (isConfiguringSecureTokenSecret) {
+        if (useSecureToken) {
             Spacer(modifier = Modifier)
 
             OutlinedTextField(
@@ -160,7 +165,7 @@ fun ConfigurationScreen(
                     return@Button
                 }
 
-                if(isConfiguringSecureTokenSecret && secretInput.isBlank()) {
+                if(useSecureToken && secretInput.isBlank()) {
                     isSecretError = true
                     return@Button
                 }
@@ -170,7 +175,7 @@ fun ConfigurationScreen(
                     configuration = QualifioConfiguration(domainInput),
                 )
 
-                if (isConfiguringSecureTokenSecret) {
+                if (useSecureToken) {
                     viewModel.updateConfiguration(domainInput, secretInput)
                 } else {
                     viewModel.updateConfiguration(domainInput, null)

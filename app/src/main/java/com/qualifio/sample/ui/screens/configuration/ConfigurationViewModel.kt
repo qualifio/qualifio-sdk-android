@@ -19,6 +19,7 @@ class ConfigurationViewModel @Inject constructor(
             dataStore.updateDomain(domain)
             if(secret != null) {
                 dataStore.updateSecureTokenSecret(secret)
+                dataStore.updateUseSecureToken(true)
             }
             dataStore.updateIsConfigurationFinished(true)
         }
