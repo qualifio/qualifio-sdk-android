@@ -13,6 +13,7 @@ import com.qualifio.sample.storage.SampleDataStore
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -31,20 +32,15 @@ class SampleApplication : Application(), QualifioListener {
         // Customise Qualifio.
         Qualifio.listener = this
 
-        mainScope.launch {
-            val domain = dataStore.domainStream.first()
-            if (domain != null) {
-                Qualifio.configure(
-                    context = this@SampleApplication,
-                    configuration = QualifioConfiguration(domain),
-                )
-            }
+        observeConfigurationState()
 
-            val showCampaignAtLaunch = dataStore.showCampaignAtLaunchStream.first()
-            if (showCampaignAtLaunch) {
-                delay(2_000)
-                Qualifio.launchCampaign()
-            }
+        mainScope.launch {
+            val domain = dataStore.domainStream.first() ?: return@launch
+
+            Qualifio.configure(
+                context = this@SampleApplication,
+                configuration = QualifioConfiguration(domain),
+            )
         }
     }
 
@@ -55,17 +51,18 @@ class SampleApplication : Application(), QualifioListener {
             try {
                 val secureTokenFields = dataStore.secureTokenFieldsStream.first()
                 val secureTokenSecret = dataStore.secureTokenSecretStream.first()
+                val secureTokenSubject = dataStore.secureTokenSubjectStream.first()
 
                 val algorithm = Algorithm.HMAC256(secureTokenSecret)
 
                 val token = JWT.create()
-                    .withSubject(this.getString(R.string.jwt_subject))
+                    .withSubject(secureTokenSubject)
                     .withIssuer(this.getString(R.string.jwt_issuer))
                     .withIssuedAt(Date())
                     .apply {
                         secureTokenFields?.let {
                             withClaim(
-                                this@SampleApplication.getString(R.string.jwt_form),
+                                "form",
                                 it,
                             )
                         }
@@ -80,6 +77,18 @@ class SampleApplication : Application(), QualifioListener {
             }
         } else {
             return null
+        }
+    }
+
+    fun observeConfigurationState() {
+        mainScope.launch {
+            dataStore.isConfigurationFinishedStream.distinctUntilChanged().collect { finished ->
+                val showCampaignAtLaunch = dataStore.showCampaignAtLaunchStream.first()
+                if (finished && showCampaignAtLaunch) {
+                    delay(2_000)
+                    Qualifio.launchCampaign()
+                }
+            }
         }
     }
 }
