@@ -68,7 +68,7 @@ fun NavigationRoot(
                             }
                         }
                         entry<Route.SecureTokenFields> {
-                            SecureTokenFieldsScreen ()
+                            SecureTokenFieldsScreen()
                         }
                     },
                 ),

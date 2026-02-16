@@ -52,7 +52,7 @@ fun ContentCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = content,
