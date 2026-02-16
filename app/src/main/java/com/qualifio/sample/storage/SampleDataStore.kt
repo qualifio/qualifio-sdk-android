@@ -41,7 +41,7 @@ class SampleDataStore @Inject constructor(
 
     val useSecureTokenStream: Flow<Boolean> =
         application.dataStore.data.map { preferences ->
-            preferences[KEY_USE_SECURE_TOKEN] ?: false
+            preferences[KEY_USE_SECURE_TOKEN] ?: true
         }
 
     val showCampaignAtLaunchStream: Flow<Boolean> =
