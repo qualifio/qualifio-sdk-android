@@ -1,3 +1,4 @@
+import groovy.json.StringEscapeUtils
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.konan.properties.loadProperties
 
@@ -29,7 +30,7 @@ android {
         buildConfigField(
             "String",
             "SECURE_TOKEN_SECRET",
-            "\"${properties.getProperty("secure.token.secret") ?: ""}\"",
+            "\"${StringEscapeUtils.escapeJava(properties.getProperty("secure.token.secret", ""))}\"",
         )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
