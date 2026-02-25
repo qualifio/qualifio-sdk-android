@@ -31,8 +31,16 @@ class ConfigurationViewModel @Inject constructor(
             return false
         }
 
-        val hostUri = domain.toUri()
+        val hostUri = normalizeDomain(domain).toUri()
 
         return !(hostUri.scheme == null || hostUri.host == null || hostUri.query != null)
+    }
+
+    private fun normalizeDomain(domain: String): String {
+        return if (!domain.startsWith("https://") && !domain.startsWith("http://")) {
+            "https://$domain"
+        } else {
+            domain
+        }
     }
 }
