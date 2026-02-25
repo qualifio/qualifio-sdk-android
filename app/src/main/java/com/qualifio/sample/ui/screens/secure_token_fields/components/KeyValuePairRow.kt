@@ -21,6 +21,7 @@ import com.qualifio.sample.R
 fun KeyValuePairRow(
     key: String,
     value: String,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
     Card(
@@ -43,6 +44,13 @@ fun KeyValuePairRow(
                 )
             }
 
+            IconButton(onClick = onEdit) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_edit_24),
+                    contentDescription = "Edit",
+                )
+            }
+
             IconButton(onClick = onDelete) {
                 Icon(
                     painter = painterResource(R.drawable.ic_delete_24),
@@ -59,5 +67,7 @@ fun KeyValuePairRowPreview() {
     KeyValuePairRow(
         "key",
         "value",
-    ) {}
+        onEdit = {},
+        onDelete = {}
+    )
 }

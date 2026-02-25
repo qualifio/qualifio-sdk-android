@@ -24,6 +24,8 @@
     <string name="secure_token_algorithm_label">Algorithm</string>
     <string name="secure_token_subject_label">Subject</string>
     <string name="secure_token_fields_title">Secure Token Fields</string>
+    <string name="secure_token_edit_field_title">Edit Field Value</string>
+    <string name="secure_token_edit_field_value_label">Value</string>
     <string name="secure_token_secret_blank_toast">JWT signing secret not configured.</string>
     <string name="secure_token_edit_subject_title">Edit Secure Token Subject</string>
     <string name="secure_token_edit_secret_title">Edit Secure Token Secret</string>

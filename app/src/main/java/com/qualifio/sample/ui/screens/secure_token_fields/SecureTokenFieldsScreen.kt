@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,6 +47,10 @@ fun SecureTokenFieldsScreen(
 
     var keyError by remember { mutableStateOf(false) }
 
+    var editKey by remember { mutableStateOf("") }
+    var editValue by remember { mutableStateOf("") }
+    var showEditDialog by remember { mutableStateOf(false) }
+
     val focusManager = LocalFocusManager.current
 
     Column(
@@ -62,6 +68,11 @@ fun SecureTokenFieldsScreen(
                 KeyValuePairRow(
                     key = entry.key,
                     value = entry.value,
+                    onEdit = {
+                        editKey = entry.key
+                        editValue = entry.value
+                        showEditDialog = true
+                    },
                     onDelete = { viewModel.deleteSecureTokenField(entry.key) },
                 )
             }
@@ -111,6 +122,45 @@ fun SecureTokenFieldsScreen(
         ) {
             Text(text = stringResource(R.string.secure_token_fields_add_field_button))
         }
+    }
+
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text(stringResource(R.string.secure_token_edit_field_title)) },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedTextField(
+                        label = {
+                            Text(
+                                text = stringResource(R.string.secure_token_edit_field_value_label),
+                            )
+                        },
+                        value = editValue,
+                        onValueChange = { editValue = it },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.addSecureTokenField(editKey, editValue)
+                        showEditDialog = false
+                    },
+                ) {
+                    Text(stringResource(R.string.secure_token_edit_dialog_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text(stringResource(R.string.secure_token_edit_dialog_cancel))
+                }
+            },
+        )
     }
 }
 
