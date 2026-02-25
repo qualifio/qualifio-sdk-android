@@ -69,8 +69,6 @@ class SampleApplication : Application(), QualifioListener {
                     }
                     .sign(algorithm)
 
-                Log.e("token", token)
-
                 token
             } catch (_: JWTCreationException) {
                 return null
