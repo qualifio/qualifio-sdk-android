@@ -76,7 +76,7 @@ fun NavigationRoot(
                                 }
                             }
                             entry<Route.SecureTokenFields> {
-                                SecureTokenFieldsScreen()
+                                SecureTokenFieldsScreen(innerPadding = innerPadding)
                             }
                         },
                     ),
