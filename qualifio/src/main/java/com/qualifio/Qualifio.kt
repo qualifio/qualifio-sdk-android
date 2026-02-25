@@ -69,17 +69,17 @@ public object Qualifio {
     @JvmStatic
     @JvmOverloads
     public fun launchCampaign(campaign: String = "sdk") {
-        if (!isConfigured) {
-            logger.warning("No configuration set. Please call Qualifio.configure()")
-            return
-        }
-
         val configuration = configuration ?: run {
             logger.warning("No configuration set. Please call Qualifio.configure()")
             return
         }
 
-        var url = determineCampaignUrl(configuration, campaign)
+        if (campaign.isBlank()) {
+            logger.warning("Invalid campaign parameter.")
+            return
+        }
+
+        var url = determineCampaignUrl(configuration, campaign.trim())
         logger.debug("Preparing campaign $url")
 
         coroutineScope.launch {
@@ -132,13 +132,17 @@ public object Qualifio {
     }
 
     private fun determineCampaignUrl(configuration: QualifioConfiguration, campaign: String): Uri {
-        // TODO: validate URL format (campaign parameter)
+        val campaignPathComponents = campaign.split("/")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
 
         return configuration.host.toUri()
             .buildUpon()
-            .appendPath(campaign)
+            .apply {
+                campaignPathComponents.forEach {
+                    appendPath(it)
+                }
+            }
             .build()
-
-        // return "https://notificare1.qualifioapp.com/quiz/1711590_2956/prefill-secure-token-.html".toUri()
     }
 }
