@@ -1,5 +1,6 @@
 package com.qualifio.sample.ui.screens.configuration
 
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.qualifio.sample.storage.SampleDataStore
@@ -26,6 +27,12 @@ class ConfigurationViewModel @Inject constructor(
     }
 
     fun validateDomain(domain: String): Boolean {
-        return (!domain.isBlank() && DOMAIN_REGEX.matches(domain))
+        if (domain.isBlank()) {
+            return false
+        }
+
+        val hostUri = domain.toUri()
+
+        return !(hostUri.scheme == null || hostUri.host == null || hostUri.query != null)
     }
 }
