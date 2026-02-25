@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import com.qualifio.sample.ui.launch.LaunchScreen
 import com.qualifio.sample.ui.screens.configuration.ConfigurationScreen
 import com.qualifio.sample.ui.screens.home.HomeScreen
 import com.qualifio.sample.ui.screens.secure_token_fields.SecureTokenFieldsScreen
@@ -34,57 +35,65 @@ fun NavigationRoot(
         Navigator(navigationState)
     }
 
-    if (!isConfigurationFinished) {
-        ConfigurationScreen()
-    } else {
-        Scaffold(
-            modifier = modifier,
-            topBar = {
-                TopBar(
-                    currentRoute = navigationState.currentRoute,
-                    onBackClick = { navigator.goBack() },
-                )
-            },
-            bottomBar = {
-                BottomNavigationBar(
-                    selectedKey = navigationState.topLevelRoute,
-                    onSelectKey = { navigator.navigate(it) },
-                )
-            },
-        ) { innerPadding ->
-            NavDisplay(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                onBack = navigator::goBack,
-                entries = navigationState.toEntries(
-                    entryProvider {
-                        entry<Route.Home> {
-                            HomeScreen()
-                        }
-                        entry<Route.Settings> {
-                            SettingsScreen {
-                                navigator.navigate(Route.SecureTokenFields)
+    when (isConfigurationFinished) {
+        null -> {
+            LaunchScreen()
+        }
+
+        false -> {
+            ConfigurationScreen()
+        }
+
+        true -> {
+            Scaffold(
+                modifier = modifier,
+                topBar = {
+                    TopBar(
+                        currentRoute = navigationState.currentRoute,
+                        onBackClick = { navigator.goBack() },
+                    )
+                },
+                bottomBar = {
+                    BottomNavigationBar(
+                        selectedKey = navigationState.topLevelRoute,
+                        onSelectKey = { navigator.navigate(it) },
+                    )
+                },
+            ) { innerPadding ->
+                NavDisplay(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    onBack = navigator::goBack,
+                    entries = navigationState.toEntries(
+                        entryProvider {
+                            entry<Route.Home> {
+                                HomeScreen()
                             }
-                        }
-                        entry<Route.SecureTokenFields> {
-                            SecureTokenFieldsScreen()
-                        }
+                            entry<Route.Settings> {
+                                SettingsScreen {
+                                    navigator.navigate(Route.SecureTokenFields)
+                                }
+                            }
+                            entry<Route.SecureTokenFields> {
+                                SecureTokenFieldsScreen()
+                            }
+                        },
+                    ),
+                    transitionSpec = {
+                        slideInHorizontally(initialOffsetX = { it }) togetherWith
+                            slideOutHorizontally(targetOffsetX = { -it })
                     },
-                ),
-                transitionSpec = {
-                    slideInHorizontally(initialOffsetX = { it }) togetherWith
-                        slideOutHorizontally(targetOffsetX = { -it })
-                },
-                popTransitionSpec = {
-                    slideInHorizontally(initialOffsetX = { -it }) togetherWith
-                        slideOutHorizontally(targetOffsetX = { it })
-                },
-                predictivePopTransitionSpec = {
-                    slideInHorizontally(initialOffsetX = { -it }) togetherWith
-                        slideOutHorizontally(targetOffsetX = { it })
-                },
-            )
+                    popTransitionSpec = {
+                        slideInHorizontally(initialOffsetX = { -it }) togetherWith
+                            slideOutHorizontally(targetOffsetX = { it })
+                    },
+                    predictivePopTransitionSpec = {
+                        slideInHorizontally(initialOffsetX = { -it }) togetherWith
+                            slideOutHorizontally(targetOffsetX = { it })
+                    },
+                )
+            }
         }
     }
 }
