@@ -1,7 +1,6 @@
 package com.qualifio.sample.ui.screens.settings.secure_token
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,7 +12,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -30,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -122,14 +121,17 @@ fun SecureTokenCard(
                     fontWeight = FontWeight.Bold,
                 )
 
-                Spacer(modifier = Modifier.weight(0.95f))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
                     text = secureTokenSecret,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
                     overflow = TextOverflow.MiddleEllipsis,
+                    textAlign = TextAlign.End,
                 )
 
-                Spacer(modifier = Modifier.weight(0.05f))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Icon(
                     painter = painterResource(R.drawable.ic_edit_24),
@@ -149,14 +151,17 @@ fun SecureTokenCard(
                     fontWeight = FontWeight.Bold,
                 )
 
-                Spacer(modifier = Modifier.weight(0.95f))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
                     text = secureTokenSubject,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
                     overflow = TextOverflow.MiddleEllipsis,
+                    textAlign = TextAlign.End,
                 )
 
-                Spacer(modifier = Modifier.weight(0.05f))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Icon(
                     painter = painterResource(R.drawable.ic_edit_24),
