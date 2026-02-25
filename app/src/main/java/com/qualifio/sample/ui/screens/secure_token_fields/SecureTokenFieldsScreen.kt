@@ -46,6 +46,7 @@ fun SecureTokenFieldsScreen(
     var valueInput by remember { mutableStateOf("") }
 
     var keyError by remember { mutableStateOf(false) }
+    var valueError by remember { mutableStateOf(false) }
 
     var editKey by remember { mutableStateOf("") }
     var editValue by remember { mutableStateOf("") }
@@ -96,8 +97,12 @@ fun SecureTokenFieldsScreen(
 
         OutlinedTextField(
             value = valueInput,
-            onValueChange = { valueInput = it },
+            onValueChange = {
+                valueInput = it
+                valueError = false
+            },
             label = { Text(text = stringResource(R.string.secure_token_fields_value_label)) },
+            isError = valueError,
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -108,6 +113,11 @@ fun SecureTokenFieldsScreen(
             onClick = {
                 if (keyInput.isBlank() || fields?.containsKey(keyInput) == true) {
                     keyError = true
+                    return@Button
+                }
+
+                if (valueInput.isBlank()) {
+                    valueError = true
                     return@Button
                 }
 
@@ -125,6 +135,8 @@ fun SecureTokenFieldsScreen(
     }
 
     if (showEditDialog) {
+        var editValueError by remember { mutableStateOf(false) }
+
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
             title = { Text(stringResource(R.string.secure_token_edit_field_title)) },
@@ -139,8 +151,12 @@ fun SecureTokenFieldsScreen(
                             )
                         },
                         value = editValue,
-                        onValueChange = { editValue = it },
+                        onValueChange = {
+                            editValue = it
+                            editValueError = false
+                        },
                         singleLine = true,
+                        isError = editValueError,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -148,6 +164,11 @@ fun SecureTokenFieldsScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        if(editValue.isBlank()) {
+                            editValueError = true
+                            return@TextButton
+                        }
+
                         viewModel.addSecureTokenField(editKey, editValue)
                         showEditDialog = false
                     },
