@@ -2,7 +2,6 @@ package com.qualifio.sample
 
 import android.app.Application
 import android.net.Uri
-import android.util.Log
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.JWTCreationException
@@ -61,9 +60,12 @@ class SampleApplication : Application(), QualifioListener {
                     .withIssuedAt(Date())
                     .apply {
                         secureTokenFields?.let {
+                            val campaignId = it["campaignId"]
+                            if (campaignId != null) withClaim("campaignId", campaignId)
+
                             withClaim(
                                 "form",
-                                it,
+                                it.filterKeys { key -> key != "campaignId" },
                             )
                         }
                     }
