@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,9 +30,12 @@ import androidx.compose.ui.unit.dp
 import com.qualifio.Qualifio
 import com.qualifio.sample.R
 import com.qualifio.sample.ui.theme.Typography
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @Composable
 fun CampaignCard() {
+    val scope = rememberCoroutineScope()
     var text by remember { mutableStateOf("") }
 
     Card(
@@ -82,10 +86,16 @@ fun CampaignCard() {
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    if (text.isBlank()) {
-                        Qualifio.launchCampaign()
-                    } else {
-                        Qualifio.launchCampaign(text)
+                    scope.launch {
+                        try {
+                            if (text.isBlank()) {
+                                Qualifio.launchCampaign()
+                            } else {
+                                Qualifio.launchCampaign(text)
+                            }
+                        } catch (e: Exception) {
+                            Timber.e(e, "Failed to launch campaign")
+                        }
                     }
                 },
                 content = {
