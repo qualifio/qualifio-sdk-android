@@ -11,6 +11,8 @@ import androidx.core.os.bundleOf
 import com.qualifio.internal.coroutines.toCallbackFunction
 import com.qualifio.internal.logger
 import com.qualifio.internal.utils.applicationInfo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 
 public object Qualifio {
@@ -59,7 +61,7 @@ public object Qualifio {
         this.configuration = configuration
     }
 
-    public suspend fun launchCampaign(campaign: String = "sdk") {
+    public suspend fun launchCampaign(campaign: String = "sdk"): Unit = withContext(Dispatchers.IO) {
         val configuration = configuration
             ?: throw IllegalStateException("No configuration set. Please call Qualifio.configure()")
 
