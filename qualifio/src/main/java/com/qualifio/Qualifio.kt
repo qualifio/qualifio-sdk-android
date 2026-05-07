@@ -8,19 +8,12 @@ import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
+import com.qualifio.internal.coroutines.toCallbackFunction
 import com.qualifio.internal.logger
 import com.qualifio.internal.utils.applicationInfo
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 
 public object Qualifio {
-    private val coroutineScope: CoroutineScope by lazy {
-        CoroutineScope(Dispatchers.IO + SupervisorJob())
-    }
-
     private var context: WeakReference<Context>? = null
     private var weakListener: WeakReference<QualifioListener>? = null
 
@@ -66,45 +59,43 @@ public object Qualifio {
         this.configuration = configuration
     }
 
-    @JvmStatic
-    @JvmOverloads
-    public fun launchCampaign(campaign: String = "sdk") {
-        val configuration = configuration ?: run {
-            logger.warning("No configuration set. Please call Qualifio.configure()")
-            return
-        }
+    public suspend fun launchCampaign(campaign: String = "sdk") {
+        val configuration = configuration
+            ?: throw IllegalStateException("No configuration set. Please call Qualifio.configure()")
 
         if (campaign.isBlank()) {
-            logger.warning("Invalid campaign parameter.")
-            return
+            throw IllegalArgumentException("Invalid campaign parameter.")
         }
 
         var url = determineCampaignUrl(configuration, campaign.trim())
         logger.debug("Preparing campaign $url")
 
-        coroutineScope.launch {
-            try {
-                val token = listener?.generateSecureToken(url)
-                if (token != null) {
-                    logger.debug("Setting the provided secure token.")
-                    url = url.buildUpon().appendQueryParameter("qual_token", token).build()
-                }
-            } catch (e: Exception) {
-                logger.error("Failed to acquire a secure token.", e)
+        try {
+            val token = listener?.generateSecureToken(url)
+            if (token != null) {
+                logger.debug("Setting the provided secure token.")
+                url = url.buildUpon().appendQueryParameter("qual_token", token).build()
             }
+        } catch (e: Exception) {
+            logger.error("Failed to acquire a secure token.", e)
+        }
 
-            try {
-                CustomTabsIntent.Builder()
-                    .setShowTitle(true)
-                    .apply { listener?.customizeCustomTabsIntent(this) }
-                    .build()
-                    .apply { this.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                    .launchUrl(requireContext(), url)
-            } catch (e: Exception) {
-                logger.error("Failed to launch the campaign browser.", e)
-            }
+        try {
+            CustomTabsIntent.Builder()
+                .setShowTitle(true)
+                .apply { listener?.customizeCustomTabsIntent(this) }
+                .build()
+                .apply { this.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                .launchUrl(requireContext(), url)
+        } catch (e: Exception) {
+            throw Exception("Failed to launch the campaign browser.", e)
         }
     }
+
+    @JvmStatic
+    @JvmOverloads
+    public fun launchCampaign(group: String = "sdk", callback: QualifioCallback<Unit>): Unit =
+        toCallbackFunction(::launchCampaign)(group, callback::onSuccess, callback::onFailure)
 
     internal fun requireContext(): Context {
         return context?.get() ?: error("Cannot find the context for Qualifio.")
