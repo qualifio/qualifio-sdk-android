@@ -73,6 +73,8 @@ dependencies {
     implementation(apps.androidx.lifecycle.viewModel.compose)
     implementation(apps.bundles.androidx.navigation3)
 
+    implementation(apps.timber)
+
     implementation(apps.moshi.kotlin)
     implementation(apps.moshi.adapters)
     ksp(apps.moshi.codegen)
