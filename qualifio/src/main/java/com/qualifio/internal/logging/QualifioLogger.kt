@@ -5,7 +5,7 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import kotlin.reflect.KClass
 
-internal class QualifioLogger(
+public class QualifioLogger(
     internal val tag: String = "Qualifio"
 ) {
     private val label: String?
@@ -24,19 +24,19 @@ internal class QualifioLogger(
                 ?.let { if (it == tag) null else it }
         }
 
-    internal var hasDebugLoggingEnabled: Boolean = false
-    internal var labelClassIgnoreList: List<KClass<*>> = listOf()
+    public var hasDebugLoggingEnabled: Boolean = false
+    public var labelClassIgnoreList: List<KClass<*>> = listOf()
 
-    internal fun debug(message: String, t: Throwable? = null): Unit =
+    public fun debug(message: String, t: Throwable? = null): Unit =
         log(Log.DEBUG, message, t)
 
-    internal fun info(message: String, t: Throwable? = null): Unit =
+    public fun info(message: String, t: Throwable? = null): Unit =
         log(Log.INFO, message, t)
 
-    internal fun warning(message: String, t: Throwable? = null): Unit =
+    public fun warning(message: String, t: Throwable? = null): Unit =
         log(Log.WARN, message, t)
 
-    internal fun error(message: String, t: Throwable? = null): Unit =
+    public fun error(message: String, t: Throwable? = null): Unit =
         log(Log.ERROR, message, t)
 
     private fun log(priority: Int, message: String, t: Throwable?) {
