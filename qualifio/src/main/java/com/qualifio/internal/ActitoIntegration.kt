@@ -6,6 +6,6 @@ import com.qualifio.Qualifio
 @Keep
 public class ActitoIntegration {
     public suspend fun launchCampaign(campaign: String) {
-        Qualifio.launchCampaign(campaign)
+        Qualifio.campaign().launch(campaign)
     }
 }
