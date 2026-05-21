@@ -1,4 +1,6 @@
 [versions]
+maven-artifactGroup = "com.qualifio"
+maven-artifactVersion = "1.0.0"
 agp = "8.13.2"
 androidx-browser = "1.9.0"
 kotlin = "2.3.10"
@@ -11,6 +13,7 @@ activityCompose = "1.12.3"
 composeBom = "2026.01.01"
 appcompat = "1.7.1"
 material = "1.13.0"
+mavenPublish = "0.36.0"
 
 [libraries]
 androidx-browser = { module = "androidx.browser:browser", version.ref = "androidx-browser" }
@@ -24,3 +27,4 @@ material = { group = "com.google.android.material", name = "material", version.r
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
