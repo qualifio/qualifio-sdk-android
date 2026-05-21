@@ -7,7 +7,6 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.JWTCreationException
 import com.qualifio.Qualifio
 import com.qualifio.QualifioConfiguration
-import com.qualifio.QualifioListener
 import com.qualifio.sample.storage.SampleDataStore
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.MainScope
@@ -20,7 +19,7 @@ import java.util.Date
 import javax.inject.Inject
 
 @HiltAndroidApp
-class SampleApplication : Application(), QualifioListener {
+class SampleApplication : Application() {
     @Inject
     lateinit var dataStore: SampleDataStore
 
@@ -32,7 +31,7 @@ class SampleApplication : Application(), QualifioListener {
         Timber.plant(Timber.DebugTree())
 
         // Customise Qualifio.
-        Qualifio.listener = this
+        Qualifio.setSecureTokenProvider(::generateSecureToken)
 
         observeConfigurationState()
 
@@ -46,7 +45,7 @@ class SampleApplication : Application(), QualifioListener {
         }
     }
 
-    override suspend fun generateSecureToken(url: Uri): String? {
+    suspend fun generateSecureToken(url: Uri): String? {
         val useSecureToken = dataStore.useSecureTokenStream.first()
 
         return if (useSecureToken) {
