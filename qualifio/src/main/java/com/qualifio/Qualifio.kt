@@ -12,12 +12,20 @@ import com.qualifio.internal.coroutines.toCallbackFunction
 import com.qualifio.internal.logger
 import com.qualifio.internal.utils.applicationInfo
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+
+public typealias QualifioSecureTokenGenerator = suspend (Uri) -> String?
+public typealias QualifioCustomTabsCustomizer = (builder: CustomTabsIntent.Builder) -> Unit
 
 public object Qualifio {
+
     private var context: WeakReference<Context>? = null
-    private var weakListener: WeakReference<QualifioListener>? = null
+    private var secureTokenGenerator: QualifioSecureTokenGenerator? = null
+    private var customTabsCustomizer: QualifioCustomTabsCustomizer? = null
 
     @JvmStatic
     public var configuration: QualifioConfiguration? = null
@@ -26,13 +34,6 @@ public object Qualifio {
     @JvmStatic
     public val isConfigured: Boolean
         get() = configuration != null
-
-    @JvmStatic
-    public var listener: QualifioListener?
-        get() = weakListener?.get()
-        set(value) {
-            weakListener = WeakReference(value)
-        }
 
     @JvmStatic
     public fun configure(context: Context) {
@@ -61,6 +62,30 @@ public object Qualifio {
         this.configuration = configuration
     }
 
+    @JvmSynthetic
+    public fun setSecureTokenProvider(generator: QualifioSecureTokenGenerator?) {
+        secureTokenGenerator = generator
+    }
+
+    @JvmStatic
+    public fun setSecureTokenProvider(provider: QualifioSecureTokenProvider?) {
+        secureTokenGenerator = provider?.let { p ->
+            { uri: Uri ->
+                suspendCancellableCoroutine { continuation ->
+                    p.generateSecureToken(uri, object : QualifioCallback<String?> {
+                        override fun onSuccess(result: String?) = continuation.resume(result)
+                        override fun onFailure(e: Exception) = continuation.resumeWithException(e)
+                    })
+                }
+            }
+        }
+    }
+
+    @JvmStatic
+    public fun setCustomTabsCustomizer(customizer: QualifioCustomTabsCustomizer?) {
+        customTabsCustomizer = customizer
+    }
+
     public suspend fun launchCampaign(campaign: String = "sdk"): Unit = withContext(Dispatchers.IO) {
         val configuration = configuration
             ?: throw IllegalStateException("No configuration set. Please call Qualifio.configure()")
@@ -73,7 +98,7 @@ public object Qualifio {
         logger.debug("Preparing campaign $url")
 
         try {
-            val token = listener?.generateSecureToken(url)
+            val token = secureTokenGenerator?.invoke(url)
             if (token != null) {
                 logger.debug("Setting the provided secure token.")
                 url = url.buildUpon().appendQueryParameter("qual_token", token).build()
@@ -85,7 +110,7 @@ public object Qualifio {
         try {
             CustomTabsIntent.Builder()
                 .setShowTitle(true)
-                .apply { listener?.customizeCustomTabsIntent(this) }
+                .apply { customTabsCustomizer?.invoke(this) }
                 .build()
                 .apply { this.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                 .launchUrl(requireContext(), url)
