@@ -14,6 +14,7 @@ import com.qualifio.internal.utils.applicationInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.lang.ref.WeakReference
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -98,7 +99,10 @@ public object Qualifio {
         logger.debug("Preparing campaign $url")
 
         try {
-            val token = secureTokenGenerator?.invoke(url)
+            val token = withTimeout(30_000L) {
+                secureTokenGenerator?.invoke(url)
+            }
+
             if (token != null) {
                 logger.debug("Setting the provided secure token.")
                 url = url.buildUpon().appendQueryParameter("qual_token", token).build()
