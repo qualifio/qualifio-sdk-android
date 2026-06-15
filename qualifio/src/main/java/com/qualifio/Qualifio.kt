@@ -19,7 +19,7 @@ import java.lang.ref.WeakReference
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-public typealias QualifioSecureTokenGenerator = suspend (Uri) -> String?
+public typealias QualifioSecureTokenGenerator = suspend (String) -> String?
 public typealias QualifioCustomTabsCustomizer = (builder: CustomTabsIntent.Builder) -> Unit
 
 public object Qualifio {
@@ -71,9 +71,9 @@ public object Qualifio {
     @JvmStatic
     public fun setSecureTokenProvider(provider: QualifioSecureTokenProvider?) {
         secureTokenGenerator = provider?.let { p ->
-            { uri: Uri ->
+            { campaign: String ->
                 suspendCancellableCoroutine { continuation ->
-                    p.generateSecureToken(uri, object : QualifioCallback<String?> {
+                    p.generateSecureToken(campaign, object : QualifioCallback<String?> {
                         override fun onSuccess(result: String?) = continuation.resume(result)
                         override fun onFailure(e: Exception) = continuation.resumeWithException(e)
                     })
@@ -101,7 +101,7 @@ public object Qualifio {
         try {
             val timeoutMillis = getSecureTokenGeneratorTimeoutMilliseconds(requireContext()).toLong()
             val token = withTimeout(timeoutMillis) {
-                secureTokenGenerator?.invoke(url)
+                secureTokenGenerator?.invoke(campaign)
             }
 
             if (token != null) {
