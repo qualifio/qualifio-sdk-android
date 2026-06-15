@@ -1,7 +1,6 @@
 package com.qualifio.sample
 
 import android.app.Application
-import android.net.Uri
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.JWTCreationException
@@ -45,7 +44,7 @@ class SampleApplication : Application() {
         }
     }
 
-    suspend fun generateSecureToken(url: Uri): String? {
+    suspend fun generateSecureToken(campaign: String): String? {
         val useSecureToken = dataStore.useSecureTokenStream.first()
 
         return if (useSecureToken) {
