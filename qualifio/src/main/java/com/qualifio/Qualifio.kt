@@ -14,11 +14,12 @@ import com.qualifio.internal.utils.applicationInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.lang.ref.WeakReference
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-public typealias QualifioSecureTokenGenerator = suspend (Uri) -> String?
+public typealias QualifioSecureTokenGenerator = suspend (String) -> String?
 public typealias QualifioCustomTabsCustomizer = (builder: CustomTabsIntent.Builder) -> Unit
 
 public object Qualifio {
@@ -70,9 +71,9 @@ public object Qualifio {
     @JvmStatic
     public fun setSecureTokenProvider(provider: QualifioSecureTokenProvider?) {
         secureTokenGenerator = provider?.let { p ->
-            { uri: Uri ->
+            { campaign: String ->
                 suspendCancellableCoroutine { continuation ->
-                    p.generateSecureToken(uri, object : QualifioCallback<String?> {
+                    p.generateSecureToken(campaign, object : QualifioCallback<String?> {
                         override fun onSuccess(result: String?) = continuation.resume(result)
                         override fun onFailure(e: Exception) = continuation.resumeWithException(e)
                     })
@@ -98,7 +99,11 @@ public object Qualifio {
         logger.debug("Preparing campaign $url")
 
         try {
-            val token = secureTokenGenerator?.invoke(url)
+            val timeoutMillis = getSecureTokenGeneratorTimeoutMilliseconds(requireContext())
+            val token = withTimeout(timeoutMillis) {
+                secureTokenGenerator?.invoke(campaign)
+            }
+
             if (token != null) {
                 logger.debug("Setting the provided secure token.")
                 url = url.buildUpon().appendQueryParameter("qual_token", token).build()
@@ -137,6 +142,18 @@ public object Qualifio {
         val metadata = info.metaData ?: bundleOf()
 
         return metadata.getBoolean("com.qualifio.debug_logging_enabled", false)
+    }
+
+    private fun getSecureTokenGeneratorTimeoutMilliseconds(context: Context): Long {
+        val info = context.packageManager.applicationInfo(
+            context.packageName,
+            PackageManager.GET_META_DATA,
+        )
+
+        val metadata = info.metaData ?: bundleOf()
+        val timeoutMillis = metadata.getInt("com.qualifio.secure_token_generator_timeout_milliseconds", 30_000)
+
+        return timeoutMillis.toLong()
     }
 
     private fun loadConfigurationFromResources(context: Context): QualifioConfiguration {
