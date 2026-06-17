@@ -99,7 +99,7 @@ public object Qualifio {
         logger.debug("Preparing campaign $url")
 
         try {
-            val timeoutMillis = getSecureTokenGeneratorTimeoutMilliseconds(requireContext()).toLong()
+            val timeoutMillis = getSecureTokenGeneratorTimeoutMilliseconds(requireContext())
             val token = withTimeout(timeoutMillis) {
                 secureTokenGenerator?.invoke(campaign)
             }
@@ -144,15 +144,16 @@ public object Qualifio {
         return metadata.getBoolean("com.qualifio.debug_logging_enabled", false)
     }
 
-    private fun getSecureTokenGeneratorTimeoutMilliseconds(context: Context): Int {
+    private fun getSecureTokenGeneratorTimeoutMilliseconds(context: Context): Long {
         val info = context.packageManager.applicationInfo(
             context.packageName,
             PackageManager.GET_META_DATA,
         )
 
         val metadata = info.metaData ?: bundleOf()
+        val timeoutMillis = metadata.getInt("com.qualifio.secure_token_generator_timeout_milliseconds", 30_000)
 
-        return metadata.getInt("com.qualifio.secure_token_generator_timeout_milliseconds", 30_000)
+        return timeoutMillis.toLong()
     }
 
     private fun loadConfigurationFromResources(context: Context): QualifioConfiguration {
