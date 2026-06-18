@@ -5,7 +5,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/qualifio/qualifio-sdk-android)](https://github.com/qualifio/qualifio-sdk-android/releases)
 [![License](https://img.shields.io/github/license/qualifio/qualifio-sdk-android)](https://github.com/qualifio/qualifio-sdk-android/blob/main/LICENSE)
 
-The Qualifio Android SDK lets you embed and launch Qualifio campaigns directly inside your application, presenting them in a modal overlay without navigating away from your page.
+The Qualifio Android SDK lets you embed and launch Qualifio campaigns directly inside your application, presenting them in a Chrome Custom Tab on top of your app without sending the user to a separate browser.
 
 Table of contents
 =================
