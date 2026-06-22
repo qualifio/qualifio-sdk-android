@@ -21,7 +21,7 @@ dependencies {
 > Pin an exact version in production so a new release can never change your app's behavior
 > unexpectedly; bump it deliberately when you are ready to upgrade.
 
-Make sure Maven Central is available to your build in `settings.gradle.kts`:
+Make sure Maven Central is available in your build in `settings.gradle.kts`:
 
 ```kotlin
 dependencyResolutionManagement {
