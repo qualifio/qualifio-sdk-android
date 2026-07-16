@@ -95,22 +95,7 @@ public object Qualifio {
             throw IllegalArgumentException("Invalid campaign parameter.")
         }
 
-        var url = determineCampaignUrl(configuration, campaign.trim())
-        logger.debug("Preparing campaign $url")
-
-        try {
-            val timeoutMillis = getSecureTokenGeneratorTimeoutMilliseconds(requireContext())
-            val token = withTimeout(timeoutMillis) {
-                secureTokenGenerator?.invoke(campaign)
-            }
-
-            if (token != null) {
-                logger.debug("Setting the provided secure token.")
-                url = url.buildUpon().appendQueryParameter("qual_token", token).build()
-            }
-        } catch (e: Exception) {
-            logger.error("Failed to acquire a secure token.", e)
-        }
+        val url = prepareCampaignUrl(configuration, campaign)
 
         try {
             CustomTabsIntent.Builder()
@@ -131,6 +116,28 @@ public object Qualifio {
 
     internal fun requireContext(): Context {
         return context?.get() ?: error("Cannot find the context for Qualifio.")
+    }
+
+    internal suspend fun prepareCampaignUrl(configuration: QualifioConfiguration, campaign: String): Uri {
+        val trimmedCampaign = campaign.trim()
+        var url = determineCampaignUrl(configuration, trimmedCampaign)
+        logger.debug("Preparing campaign $url")
+
+        try {
+            val timeoutMillis = getSecureTokenGeneratorTimeoutMilliseconds(requireContext())
+            val token = withTimeout(timeoutMillis) {
+                secureTokenGenerator?.invoke(trimmedCampaign)
+            }
+
+            if (token != null) {
+                logger.debug("Setting the provided secure token.")
+                url = url.buildUpon().appendQueryParameter("qual_token", token).build()
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to acquire a secure token.", e)
+        }
+
+        return url
     }
 
     private fun hasDebugLoggingEnabled(context: Context): Boolean {
