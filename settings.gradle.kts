@@ -29,3 +29,4 @@ dependencyResolutionManagement {
 rootProject.name = "qualifio-sdk-android"
 include(":app")
 include(":qualifio")
+include(":qualifio-compose")
