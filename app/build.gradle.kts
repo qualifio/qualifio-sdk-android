@@ -88,4 +88,5 @@ dependencies {
     implementation(apps.auth0.jwt)
 
     implementation(project(":qualifio"))
+    implementation(project(":qualifio-compose"))
 }
