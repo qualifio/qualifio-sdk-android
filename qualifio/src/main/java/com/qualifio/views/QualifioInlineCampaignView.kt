@@ -139,7 +139,7 @@ public class QualifioInlineCampaignView private constructor(
      * Loads a campaign into the inline WebView.
      */
     @JvmOverloads
-    public fun loadCampaign(campaign: String = "sdk") {
+    public fun loadCampaign(campaign: String = Qualifio.DEFAULT_CAMPAIGN) {
         val configuration = Qualifio.configuration
             ?: throw IllegalStateException("No configuration set. Please call Qualifio.configure()")
 

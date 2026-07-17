@@ -23,6 +23,7 @@ public typealias QualifioSecureTokenGenerator = suspend (String) -> String?
 public typealias QualifioCustomTabsCustomizer = (builder: CustomTabsIntent.Builder) -> Unit
 
 public object Qualifio {
+    public const val DEFAULT_CAMPAIGN: String = "sdk"
 
     private var context: WeakReference<Context>? = null
     private var secureTokenGenerator: QualifioSecureTokenGenerator? = null
@@ -87,7 +88,7 @@ public object Qualifio {
         customTabsCustomizer = customizer
     }
 
-    public suspend fun launchCampaign(campaign: String = "sdk"): Unit = withContext(Dispatchers.IO) {
+    public suspend fun launchCampaign(campaign: String = DEFAULT_CAMPAIGN): Unit = withContext(Dispatchers.IO) {
         val configuration = configuration
             ?: throw IllegalStateException("No configuration set. Please call Qualifio.configure()")
 
@@ -111,7 +112,7 @@ public object Qualifio {
 
     @JvmStatic
     @JvmOverloads
-    public fun launchCampaign(group: String = "sdk", callback: QualifioCallback<Unit>): Unit =
+    public fun launchCampaign(group: String = DEFAULT_CAMPAIGN, callback: QualifioCallback<Unit>): Unit =
         toCallbackFunction(::launchCampaign)(group, callback::onSuccess, callback::onFailure)
 
     internal fun requireContext(): Context {
