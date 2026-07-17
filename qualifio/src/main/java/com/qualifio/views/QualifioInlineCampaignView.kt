@@ -140,11 +140,14 @@ public class QualifioInlineCampaignView private constructor(
      */
     @JvmOverloads
     public fun loadCampaign(campaign: String = Qualifio.DEFAULT_CAMPAIGN) {
-        val configuration = Qualifio.configuration
-            ?: throw IllegalStateException("No configuration set. Please call Qualifio.configure()")
+        val configuration = Qualifio.configuration ?: run {
+            logger.error("No configuration set. Please call Qualifio.configure()")
+            return
+        }
 
         if (campaign.isBlank()) {
-            throw IllegalArgumentException("Invalid campaign parameter.")
+            logger.error("Invalid campaign parameter.")
+            return
         }
 
         loadJob?.cancel()
