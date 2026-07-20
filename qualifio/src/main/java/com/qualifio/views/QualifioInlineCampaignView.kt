@@ -52,6 +52,7 @@ public class QualifioInlineCampaignView private constructor(
      * @param autoScrollOnPageLoadEnabled when true, subsequent campaign page loads request that
      * the parent scroll container bring this view back to its top edge.
      */
+    @JvmOverloads
     public constructor(
         context: Context,
         campaign: String,
@@ -170,45 +171,39 @@ public class QualifioInlineCampaignView private constructor(
         defStyleAttr: Int,
         campaign: String?,
         autoScrollOnPageLoadEnabledOverride: Boolean?,
-    ): InitialConfiguration {
-        val attributes = resolveQualifioAttributes(context, attrs, defStyleAttr)
+    ): InlineCampaignConfiguration {
+        val attributes = resolveConfigurationFromAttributes(context, attrs, defStyleAttr)
 
-        return InitialConfiguration(
+        return InlineCampaignConfiguration(
             campaign = campaign
-                ?.takeIf { it.isNotBlank() }
                 ?: attributes.campaign,
             autoScrollOnPageLoadEnabled = autoScrollOnPageLoadEnabledOverride
                 ?: attributes.autoScrollOnPageLoadEnabled,
         )
     }
 
-    private fun resolveQualifioAttributes(
+    private fun resolveConfigurationFromAttributes(
         context: Context,
         attrs: AttributeSet?,
         defStyleAttr: Int,
-    ): InitialConfiguration {
+    ): InlineCampaignConfiguration {
         var campaign: String? = null
         var autoScrollOnPageLoadEnabled = autoScrollOnPageLoadEnabled
 
         context.withStyledAttributes(
             attrs,
             R.styleable.QualifioInlineCampaignView,
-            defStyleAttr,
-            0,
+            defStyleAttr
         ) {
             autoScrollOnPageLoadEnabled = getBoolean(
                 R.styleable.QualifioInlineCampaignView_qualifioAutoScrollOnPageLoadEnabled,
                 autoScrollOnPageLoadEnabled,
             )
 
-            getString(R.styleable.QualifioInlineCampaignView_qualifioCampaign)
-                ?.takeIf { it.isNotBlank() }
-                ?.let { campaignValue ->
-                    campaign = campaignValue
-                }
+            campaign = getString(R.styleable.QualifioInlineCampaignView_qualifioCampaign)
         }
 
-        return InitialConfiguration(
+        return InlineCampaignConfiguration(
             campaign = campaign,
             autoScrollOnPageLoadEnabled = autoScrollOnPageLoadEnabled,
         )
@@ -234,7 +229,7 @@ public class QualifioInlineCampaignView private constructor(
         val heightPx = ceil(heightCssPx * resources.displayMetrics.density)
             .roundToInt()
 
-        if (heightPx <= 0 || abs(heightPx - lastReportedHeightPx) < 1) {
+        if (heightPx < 1 || abs(heightPx - lastReportedHeightPx) < 1) {
             return
         }
 
@@ -272,7 +267,7 @@ public class QualifioInlineCampaignView private constructor(
         }
     }
 
-    private data class InitialConfiguration(
+    private data class InlineCampaignConfiguration(
         val campaign: String?,
         val autoScrollOnPageLoadEnabled: Boolean,
     )
