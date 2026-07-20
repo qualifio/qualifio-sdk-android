@@ -1,7 +1,6 @@
 package com.qualifio.sample.ui.screens.home.campaign
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -88,7 +86,7 @@ fun CampaignInlineComposeCard() {
                 Button(
                     modifier = Modifier.weight(1f),
                     onClick = {
-                        campaign = XMAS_CAMPAIGN
+                        campaign = "sdk-xmas"
                     },
                 ) {
                     Text(text = stringResource(R.string.home_campaign_inline_xmas_button))
