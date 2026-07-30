@@ -120,14 +120,13 @@ public object Qualifio {
     }
 
     internal suspend fun prepareCampaignUrl(configuration: QualifioConfiguration, campaign: String): Uri {
-        val trimmedCampaign = campaign.trim()
-        var url = determineCampaignUrl(configuration, trimmedCampaign)
+        var url = determineCampaignUrl(configuration, campaign.trim())
         logger.debug("Preparing campaign $url")
 
         try {
             val timeoutMillis = getSecureTokenGeneratorTimeoutMilliseconds(requireContext())
             val token = withTimeout(timeoutMillis) {
-                secureTokenGenerator?.invoke(trimmedCampaign)
+                secureTokenGenerator?.invoke(campaign)
             }
 
             if (token != null) {
