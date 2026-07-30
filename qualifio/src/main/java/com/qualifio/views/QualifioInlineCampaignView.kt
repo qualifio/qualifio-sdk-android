@@ -74,6 +74,9 @@ public class QualifioInlineCampaignView private constructor(
     private val viewScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var loadJob: Job? = null
     private var lastReportedHeightPx: Int = 0
+    private var hasAppliedHeightForCurrentCampaign: Boolean = false
+    private var pendingHeightReportPx: Int? = null
+    private var scheduledHeightReportRunnable: Runnable? = null
     private var didLoadInitialPage: Boolean = false
 
     private val webView: WebView = WebView(context)
@@ -152,6 +155,10 @@ public class QualifioInlineCampaignView private constructor(
         }
 
         loadJob?.cancel()
+        lastReportedHeightPx = 0
+        hasAppliedHeightForCurrentCampaign = false
+        cancelScheduledHeightReport()
+
         loadJob = viewScope.launch {
             val url = try {
                 Qualifio.prepareCampaignUrl(configuration, campaign)
@@ -226,15 +233,52 @@ public class QualifioInlineCampaignView private constructor(
     }
 
     private fun reportContentHeight(heightCssPx: Float) {
-        val heightPx = ceil(heightCssPx * resources.displayMetrics.density)
-            .roundToInt()
+        val density = resources.displayMetrics.density
+        val heightPx = ceil(heightCssPx * density).roundToInt()
 
-        if (heightPx < 1 || abs(heightPx - lastReportedHeightPx) < 1) {
+        if (heightPx < 1) {
             return
         }
 
+        if (!hasAppliedHeightForCurrentCampaign) {
+            schedulePendingHeightReport(heightPx)
+            return
+        }
+
+        if (abs(heightPx - lastReportedHeightPx) < 1) {
+            return
+        }
+
+        applyContentHeight(heightPx)
+    }
+
+    private fun applyContentHeight(heightPx: Int) {
+        cancelScheduledHeightReport()
+
+        hasAppliedHeightForCurrentCampaign = true
         lastReportedHeightPx = heightPx
         updateLayoutHeight(heightPx)
+    }
+
+    private fun schedulePendingHeightReport(heightPx: Int) {
+        pendingHeightReportPx = heightPx
+
+        if (scheduledHeightReportRunnable != null) {
+            return
+        }
+
+        val runnable = Runnable {
+            pendingHeightReportPx?.let(::applyContentHeight)
+        }
+
+        scheduledHeightReportRunnable = runnable
+        postDelayed(runnable, HEIGHT_REPORT_DELAY_MS)
+    }
+
+    private fun cancelScheduledHeightReport() {
+        scheduledHeightReportRunnable?.let(::removeCallbacks)
+        scheduledHeightReportRunnable = null
+        pendingHeightReportPx = null
     }
 
     private fun updateLayoutHeight(heightPx: Int) {
@@ -258,11 +302,11 @@ public class QualifioInlineCampaignView private constructor(
 
     private inner class ContentHeightBridge {
         @JavascriptInterface
-        fun postContentHeight(height: String) {
-            val parsedHeight = height.toFloatOrNull() ?: return
+        fun postContentHeight(heightString: String) {
+            val height = heightString.toFloatOrNull() ?: return
 
             webView.post {
-                reportContentHeight(parsedHeight)
+                reportContentHeight(height)
             }
         }
     }
@@ -274,6 +318,7 @@ public class QualifioInlineCampaignView private constructor(
 
     private companion object {
         private const val CONTENT_HEIGHT_BRIDGE_NAME = "QualifioInlineCampaignView"
+        private const val HEIGHT_REPORT_DELAY_MS = 500L
         private const val CONTENT_HEIGHT_SCRIPT = """
             (function() {
               if (window.__qualifioInlineCampaignViewHeightObserver) {
@@ -287,9 +332,6 @@ public class QualifioInlineCampaignView private constructor(
                 var height = 0;
 
                 if (body) {
-                  var bodyRect = body.getBoundingClientRect();
-                  height = Math.max(height, bodyRect.bottom + scrollY);
-
                   var elements = body.querySelectorAll('*');
                   for (var i = 0; i < elements.length; i += 1) {
                     var rects = elements[i].getClientRects();
@@ -299,17 +341,17 @@ public class QualifioInlineCampaignView private constructor(
                   }
                 }
 
-                if (height > 0) {
-                  return Math.ceil(height);
+                if (height <= 0) {
+                  var documentElement = document.documentElement;
+                  height = Math.max(
+                    body ? body.scrollHeight : 0,
+                    documentElement ? documentElement.scrollHeight : 0,
+                    body ? body.offsetHeight : 0,
+                    documentElement ? documentElement.offsetHeight : 0
+                  );
                 }
 
-                var documentElement = document.documentElement;
-                return Math.ceil(Math.max(
-                  body ? body.scrollHeight : 0,
-                  documentElement ? documentElement.scrollHeight : 0,
-                  body ? body.offsetHeight : 0,
-                  documentElement ? documentElement.offsetHeight : 0
-                ));
+                return Math.ceil(height);
               };
 
               var lastHeight = 0;
