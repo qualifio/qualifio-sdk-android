@@ -11,6 +11,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.core.content.withStyledAttributes
+import androidx.core.view.doOnLayout
 import com.qualifio.Qualifio
 import com.qualifio.R
 import com.qualifio.internal.logger
@@ -19,7 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -71,15 +71,16 @@ public class QualifioInlineCampaignView private constructor(
      */
     public var autoScrollOnPageLoadEnabled: Boolean = true
 
+    private val webView: WebView = WebView(context)
     private val viewScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var loadJob: Job? = null
+    private var currentLoadRequestId: Int = 0
     private var lastReportedHeightPx: Int = 0
-    private var hasAppliedHeightForCurrentCampaign: Boolean = false
-    private var pendingHeightReportPx: Int? = null
-    private var scheduledHeightReportRunnable: Runnable? = null
+    private var acceptsContentHeightReports: Boolean = false
     private var didLoadInitialPage: Boolean = false
 
-    private val webView: WebView = WebView(context)
+    private val loadingViewportHeightPx: Int
+        get() = (200 * resources.displayMetrics.density).roundToInt()
 
     private val inlineWebViewClient: WebViewClient =
         object : WebViewClient() {
@@ -94,7 +95,10 @@ public class QualifioInlineCampaignView private constructor(
             }
 
             override fun onPageFinished(view: WebView, url: String) {
-                reportContentHeightFromDocument()
+                acceptsContentHeightReports = true
+                reportContentHeightFromDocument(
+                    waitsForLazyElements = !didLoadInitialPage,
+                )
 
                 if (!didLoadInitialPage) {
                     didLoadInitialPage = true
@@ -130,6 +134,7 @@ public class QualifioInlineCampaignView private constructor(
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
+        updateLayoutHeight(lastReportedHeightPx)
         webView.onResume()
     }
 
@@ -154,10 +159,11 @@ public class QualifioInlineCampaignView private constructor(
             return
         }
 
+        val loadRequestId = ++currentLoadRequestId
         loadJob?.cancel()
         lastReportedHeightPx = 0
-        hasAppliedHeightForCurrentCampaign = false
-        cancelScheduledHeightReport()
+        acceptsContentHeightReports = false
+        applyLoadingLayout()
 
         loadJob = viewScope.launch {
             val url = try {
@@ -167,8 +173,14 @@ public class QualifioInlineCampaignView private constructor(
                 return@launch
             }
 
-            didLoadInitialPage = false
-            webView.loadUrl(url.toString())
+            webView.doOnLayout {
+                if (loadRequestId != currentLoadRequestId) {
+                    return@doOnLayout
+                }
+
+                didLoadInitialPage = false
+                webView.loadUrl(url.toString())
+            }
         }
     }
 
@@ -227,9 +239,14 @@ public class QualifioInlineCampaignView private constructor(
             webView,
             LayoutParams(
                 LayoutParams.MATCH_PARENT,
-                LayoutParams.MATCH_PARENT,
+                loadingViewportHeightPx,
             ),
         )
+    }
+
+    private fun applyLoadingLayout() {
+        updateLayoutHeight(0)
+        updateWebViewHeight(loadingViewportHeightPx)
     }
 
     private fun reportContentHeight(heightCssPx: Float) {
@@ -240,12 +257,7 @@ public class QualifioInlineCampaignView private constructor(
             return
         }
 
-        if (!hasAppliedHeightForCurrentCampaign) {
-            schedulePendingHeightReport(heightPx)
-            return
-        }
-
-        if (abs(heightPx - lastReportedHeightPx) < 1) {
+        if (heightPx == lastReportedHeightPx) {
             return
         }
 
@@ -253,32 +265,9 @@ public class QualifioInlineCampaignView private constructor(
     }
 
     private fun applyContentHeight(heightPx: Int) {
-        cancelScheduledHeightReport()
-
-        hasAppliedHeightForCurrentCampaign = true
         lastReportedHeightPx = heightPx
+        updateWebViewHeight(LayoutParams.MATCH_PARENT)
         updateLayoutHeight(heightPx)
-    }
-
-    private fun schedulePendingHeightReport(heightPx: Int) {
-        pendingHeightReportPx = heightPx
-
-        if (scheduledHeightReportRunnable != null) {
-            return
-        }
-
-        val runnable = Runnable {
-            pendingHeightReportPx?.let(::applyContentHeight)
-        }
-
-        scheduledHeightReportRunnable = runnable
-        postDelayed(runnable, HEIGHT_REPORT_DELAY_MS)
-    }
-
-    private fun cancelScheduledHeightReport() {
-        scheduledHeightReportRunnable?.let(::removeCallbacks)
-        scheduledHeightReportRunnable = null
-        pendingHeightReportPx = null
     }
 
     private fun updateLayoutHeight(heightPx: Int) {
@@ -290,14 +279,26 @@ public class QualifioInlineCampaignView private constructor(
         }
     }
 
+    private fun updateWebViewHeight(heightPx: Int) {
+        webView.layoutParams?.let { currentLayoutParams ->
+            if (currentLayoutParams.height != heightPx) {
+                currentLayoutParams.height = heightPx
+                webView.layoutParams = currentLayoutParams
+            }
+        }
+    }
+
     private fun scrollContainingScrollViewToTop() {
         post {
             requestRectangleOnScreen(Rect(0, 0, 1, 1), false)
         }
     }
 
-    private fun reportContentHeightFromDocument() {
-        webView.evaluateJavascript(CONTENT_HEIGHT_SCRIPT, null)
+    private fun reportContentHeightFromDocument(waitsForLazyElements: Boolean) {
+        webView.evaluateJavascript(
+            "$CONTENT_HEIGHT_SCRIPT($waitsForLazyElements);",
+            null,
+        )
     }
 
     private inner class ContentHeightBridge {
@@ -306,6 +307,10 @@ public class QualifioInlineCampaignView private constructor(
             val height = heightString.toFloatOrNull() ?: return
 
             webView.post {
+                if (!acceptsContentHeightReports) {
+                    return@post
+                }
+
                 reportContentHeight(height)
             }
         }
@@ -318,11 +323,10 @@ public class QualifioInlineCampaignView private constructor(
 
     private companion object {
         private const val CONTENT_HEIGHT_BRIDGE_NAME = "QualifioInlineCampaignView"
-        private const val HEIGHT_REPORT_DELAY_MS = 500L
         private const val CONTENT_HEIGHT_SCRIPT = """
-            (function() {
-              if (window.__qualifioInlineCampaignViewHeightObserver) {
-                window.__qualifioInlineCampaignViewHeightObserver.report();
+            (function(waitForLazyElements) {
+              if (window.__qualifioInlineCampaignHeightObserver) {
+                window.__qualifioInlineCampaignHeightObserver.report();
                 return;
               }
 
@@ -355,22 +359,79 @@ public class QualifioInlineCampaignView private constructor(
               };
 
               var lastHeight = 0;
-              var report = function() {
-                window.requestAnimationFrame(function() {
-                  var height = measure();
+              var reportingState = {
+                phase: 'initializing',
+                initialHeight: 0,
+                timeoutId: null
+              };
 
-                  if (Math.abs(height - lastHeight) < 1) {
+              var postContentHeight = function(height) {
+                if (Math.abs(height - lastHeight) < 1) {
+                  return;
+                }
+
+                lastHeight = height;
+                if (window.QualifioInlineCampaignView && window.QualifioInlineCampaignView.postContentHeight) {
+                  window.QualifioInlineCampaignView.postContentHeight(height.toString());
+                }
+              };
+
+              var activateReporting = function(height) {
+                if (reportingState.phase === 'active') {
+                  return;
+                }
+
+                reportingState.phase = 'active';
+                reportingState.initialHeight = 0;
+                if (reportingState.timeoutId !== null) {
+                  window.clearTimeout(reportingState.timeoutId);
+                  reportingState.timeoutId = null;
+                }
+                postContentHeight(height);
+              };
+
+              var handleMeasuredHeight = function(height, forceInitialReport) {
+                if (reportingState.phase === 'initializing') {
+                  return;
+                }
+
+                if (reportingState.phase === 'waiting') {
+                  if (
+                    !forceInitialReport &&
+                    Math.abs(height - reportingState.initialHeight) < 1
+                  ) {
                     return;
                   }
 
-                  lastHeight = height;
-                  if (window.QualifioInlineCampaignView && window.QualifioInlineCampaignView.postContentHeight) {
-                    window.QualifioInlineCampaignView.postContentHeight(height.toString());
-                  }
+                  activateReporting(height);
+                  return;
+                }
+
+                postContentHeight(height);
+              };
+
+              var report = function() {
+                window.requestAnimationFrame(function() {
+                  handleMeasuredHeight(measure(), false);
                 });
               };
 
-              window.__qualifioInlineCampaignViewHeightObserver = { report: report };
+              var initialHeight = measure();
+              var hasLazyElements =
+                waitForLazyElements &&
+                document.querySelector('[loading="lazy"]') !== null;
+
+              if (hasLazyElements) {
+                reportingState.phase = 'waiting';
+                reportingState.initialHeight = initialHeight;
+                reportingState.timeoutId = window.setTimeout(function() {
+                  handleMeasuredHeight(measure(), true);
+                }, 500);
+              } else {
+                activateReporting(initialHeight);
+              }
+
+              window.__qualifioInlineCampaignHeightObserver = { report: report };
 
               if (window.ResizeObserver) {
                 var resizeObserver = new ResizeObserver(report);
@@ -391,8 +452,7 @@ public class QualifioInlineCampaignView private constructor(
 
               window.addEventListener('load', report);
               window.addEventListener('resize', report);
-              report();
-            })();
+            })
         """
     }
 }
