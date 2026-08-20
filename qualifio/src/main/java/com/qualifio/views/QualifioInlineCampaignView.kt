@@ -96,9 +96,7 @@ public class QualifioInlineCampaignView private constructor(
 
             override fun onPageFinished(view: WebView, url: String) {
                 acceptsContentHeightReports = true
-                reportContentHeightFromDocument(
-                    waitsForLazyElements = !didLoadInitialPage,
-                )
+                reportContentHeightFromDocument()
 
                 if (!didLoadInitialPage) {
                     didLoadInitialPage = true
@@ -266,7 +264,7 @@ public class QualifioInlineCampaignView private constructor(
 
     private fun applyContentHeight(heightPx: Int) {
         lastReportedHeightPx = heightPx
-        updateWebViewHeight(LayoutParams.MATCH_PARENT)
+        updateWebViewHeight(heightPx)
         updateLayoutHeight(heightPx)
     }
 
@@ -294,9 +292,9 @@ public class QualifioInlineCampaignView private constructor(
         }
     }
 
-    private fun reportContentHeightFromDocument(waitsForLazyElements: Boolean) {
+    private fun reportContentHeightFromDocument() {
         webView.evaluateJavascript(
-            "$CONTENT_HEIGHT_SCRIPT($waitsForLazyElements);",
+            "$CONTENT_HEIGHT_SCRIPT();",
             null,
         )
     }
@@ -324,29 +322,33 @@ public class QualifioInlineCampaignView private constructor(
     private companion object {
         private const val CONTENT_HEIGHT_BRIDGE_NAME = "QualifioInlineCampaignView"
         private const val CONTENT_HEIGHT_SCRIPT = """
-            (function(waitForLazyElements) {
+            (function() {
               if (window.__qualifioInlineCampaignHeightObserver) {
                 window.__qualifioInlineCampaignHeightObserver.report();
                 return;
               }
 
-              var measure = function() {
-                var body = document.body;
-                var scrollY = window.pageYOffset || 0;
+              var measureDocument = function(
+                targetDocument,
+                targetWindow,
+                correctIframeHeight
+              ) {
+                var body = targetDocument.body;
+                var scrollY = targetWindow ? targetWindow.pageYOffset || 0 : 0;
                 var height = 0;
 
                 if (body) {
                   var elements = body.querySelectorAll('*');
                   for (var i = 0; i < elements.length; i += 1) {
-                    var rects = elements[i].getClientRects();
-                    for (var j = 0; j < rects.length; j += 1) {
-                      height = Math.max(height, rects[j].bottom + scrollY);
-                    }
+                    height = Math.max(
+                      height,
+                      elements[i].getBoundingClientRect().bottom + scrollY
+                    );
                   }
                 }
 
                 if (height <= 0) {
-                  var documentElement = document.documentElement;
+                  var documentElement = targetDocument.documentElement;
                   height = Math.max(
                     body ? body.scrollHeight : 0,
                     documentElement ? documentElement.scrollHeight : 0,
@@ -355,18 +357,49 @@ public class QualifioInlineCampaignView private constructor(
                   );
                 }
 
+                if (correctIframeHeight && body) {
+                  var iframes = body.querySelectorAll('iframe');
+                  if (iframes.length === 1) {
+                    var iframe = iframes[0];
+                    var hasDeclaredHeight =
+                      iframe.style.height !== '' || iframe.hasAttribute('height');
+                    if (hasDeclaredHeight) {
+                      try {
+                        var iframeDocument = iframe.contentDocument;
+                        if (iframeDocument) {
+                          if (
+                            !iframeDocument.body ||
+                            iframeDocument.body.children.length === 0
+                          ) {
+                            return 0;
+                          }
+
+                          var contentHeight = measureDocument(
+                            iframeDocument,
+                            iframe.contentWindow,
+                            false
+                          );
+                          if (contentHeight <= 0) {
+                            return 0;
+                          }
+
+                          height +=
+                            contentHeight - iframe.getBoundingClientRect().height;
+                        }
+                      } catch (error) {
+                        // Cross-origin frames keep their rendered outer size.
+                      }
+                    }
+                  }
+                }
+
                 return Math.ceil(height);
               };
 
               var lastHeight = 0;
-              var reportingState = {
-                phase: 'initializing',
-                initialHeight: 0,
-                timeoutId: null
-              };
-
+              var reportScheduled = false;
               var postContentHeight = function(height) {
-                if (Math.abs(height - lastHeight) < 1) {
+                if (height === lastHeight) {
                   return;
                 }
 
@@ -376,60 +409,17 @@ public class QualifioInlineCampaignView private constructor(
                 }
               };
 
-              var activateReporting = function(height) {
-                if (reportingState.phase === 'active') {
-                  return;
-                }
-
-                reportingState.phase = 'active';
-                reportingState.initialHeight = 0;
-                if (reportingState.timeoutId !== null) {
-                  window.clearTimeout(reportingState.timeoutId);
-                  reportingState.timeoutId = null;
-                }
-                postContentHeight(height);
-              };
-
-              var handleMeasuredHeight = function(height, forceInitialReport) {
-                if (reportingState.phase === 'initializing') {
-                  return;
-                }
-
-                if (reportingState.phase === 'waiting') {
-                  if (
-                    !forceInitialReport &&
-                    Math.abs(height - reportingState.initialHeight) < 1
-                  ) {
-                    return;
-                  }
-
-                  activateReporting(height);
-                  return;
-                }
-
-                postContentHeight(height);
-              };
-
               var report = function() {
+                if (reportScheduled) {
+                  return;
+                }
+
+                reportScheduled = true;
                 window.requestAnimationFrame(function() {
-                  handleMeasuredHeight(measure(), false);
+                  reportScheduled = false;
+                  postContentHeight(measureDocument(document, window, true));
                 });
               };
-
-              var initialHeight = measure();
-              var hasLazyElements =
-                waitForLazyElements &&
-                document.querySelector('[loading="lazy"]') !== null;
-
-              if (hasLazyElements) {
-                reportingState.phase = 'waiting';
-                reportingState.initialHeight = initialHeight;
-                reportingState.timeoutId = window.setTimeout(function() {
-                  handleMeasuredHeight(measure(), true);
-                }, 500);
-              } else {
-                activateReporting(initialHeight);
-              }
 
               window.__qualifioInlineCampaignHeightObserver = { report: report };
 
@@ -452,6 +442,13 @@ public class QualifioInlineCampaignView private constructor(
 
               window.addEventListener('load', report);
               window.addEventListener('resize', report);
+
+              var iframes = document.querySelectorAll('iframe');
+              for (var i = 0; i < iframes.length; i += 1) {
+                iframes[i].addEventListener('load', report);
+              }
+
+              report();
             })
         """
     }
