@@ -24,7 +24,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="4dp"
             android:layout_weight="1"
-            android:text="@string/home_campaign_inline_default_button" />
+            android:text="@string/home_inline_campaign_default_button" />
 
         <Button
             android:id="@+id/loadXmasCampaignButton"
@@ -32,6 +32,6 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
             android:layout_weight="1"
-            android:text="@string/home_campaign_inline_xmas_button" />
+            android:text="@string/home_inline_campaign_xmas_button" />
     </LinearLayout>
 </LinearLayout>

@@ -13,13 +13,13 @@
     <string name="home_content_title">Content</string>
     <string name="home_content_content">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam fermentum urna elit, non elementum justo convallis in. Etiam porta justo vulputate lacus fermentum, ut accumsan neque malesuada. Pellentesque sit amet ipsum suscipit, feugiat nisi at, venenatis ante. Donec sagittis non metus in tempus. Nam felis justo, tincidunt et accumsan eu, blandit id metus.</string>
     <string name="home_campaign_title">Campaign</string>
-    <string name="home_campaign_inline_xml_title">Campaign inline (XML)</string>
-    <string name="home_campaign_inline_code_title">Campaign inline (Code)</string>
-    <string name="home_campaign_inline_compose_title">Campaign inline (Compose)</string>
+    <string name="home_inline_campaign_xml_title">Inline campaign (XML)</string>
+    <string name="home_inline_campaign_code_title">Inline campaign (Code)</string>
+    <string name="home_inline_campaign_compose_title">Inline campaign (Compose)</string>
     <string name="home_campaign_input">Campaign Path</string>
     <string name="home_campaign_button">Launch Campaign</string>
-    <string name="home_campaign_inline_xmas_button">Load sdk-xmas</string>
-    <string name="home_campaign_inline_default_button">Load sdk</string>
+    <string name="home_inline_campaign_xmas_button">Load sdk-xmas</string>
+    <string name="home_inline_campaign_default_button">Load sdk</string>
 
     <string name="settings_configuration_title">Configuration</string>
     <string name="settings_configuration_domain_label">Domain</string>

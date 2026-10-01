@@ -28,7 +28,7 @@ import com.qualifio.sample.ui.theme.Typography
 import com.qualifio.views.QualifioInlineCampaignView
 
 @Composable
-fun CampaignInlineXmlCard() {
+fun InlineCampaignXmlCard() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -50,7 +50,7 @@ fun CampaignInlineXmlCard() {
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
-                    text = stringResource(R.string.home_campaign_inline_xml_title),
+                    text = stringResource(R.string.home_inline_campaign_xml_title),
                     style = Typography.bodyLarge,
                 )
             }
@@ -71,8 +71,8 @@ fun CampaignInlineXmlCard() {
 
 @Preview
 @Composable
-fun CampaignInlineXmlCardPreview() {
-    CampaignInlineXmlCard()
+fun InlineCampaignXmlCardPreview() {
+    InlineCampaignXmlCard()
 }
 
 private fun View.bindCampaignButtons(): View {
