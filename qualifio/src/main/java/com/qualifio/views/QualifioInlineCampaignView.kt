@@ -47,7 +47,7 @@ public class QualifioInlineCampaignView private constructor(
     )
 
     /**
-     * Creates an inline campaign view and loads provided [campaign].
+     * Creates an inline campaign view and loads the provided [campaign].
      *
      * @param autoScrollOnPageLoadEnabled when true, subsequent campaign page loads request that
      * the parent scroll container bring this view back to its top edge.

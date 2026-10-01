@@ -11,7 +11,7 @@ import com.qualifio.Qualifio
 import com.qualifio.views.QualifioInlineCampaignView
 
 /**
- * Displays a Qualifio campaign inline in a Jetpack Compose.
+ * Displays a Qualifio campaign inline in a Jetpack Compose composable.
  */
 @Composable
 public fun QualifioInlineCampaign(
