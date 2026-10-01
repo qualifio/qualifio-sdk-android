@@ -112,8 +112,8 @@ public object Qualifio {
 
     @JvmStatic
     @JvmOverloads
-    public fun launchCampaign(group: String = DEFAULT_CAMPAIGN, callback: QualifioCallback<Unit>): Unit =
-        toCallbackFunction(::launchCampaign)(group, callback::onSuccess, callback::onFailure)
+    public fun launchCampaign(campaign: String = DEFAULT_CAMPAIGN, callback: QualifioCallback<Unit>): Unit =
+        toCallbackFunction(::launchCampaign)(campaign, callback::onSuccess, callback::onFailure)
 
     internal fun requireContext(): Context {
         return context?.get() ?: error("Cannot find the context for Qualifio.")
