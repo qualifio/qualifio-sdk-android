@@ -77,6 +77,12 @@ public class QualifioInlineCampaignView private constructor(
      */
     public var autoScrollOnPageLoadEnabled: Boolean = true
 
+    /**
+     * The campaign currently loaded, or pending until the view is attached.
+     */
+    public var campaign: String? = null
+        private set
+
     private val webView: WebView = WebView(context)
     private val viewScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var loadJob: Job? = null
@@ -212,6 +218,7 @@ public class QualifioInlineCampaignView private constructor(
             return
         }
 
+        this.campaign = campaign
         pendingCampaign = campaign
 
         if (isAttachedToWindow) {
