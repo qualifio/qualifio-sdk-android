@@ -245,6 +245,11 @@ public class QualifioInlineCampaignView private constructor(
                 return@launch
             }
 
+            // Re-attach may skip the WebView's layout, so doOnLayout would never fire.
+            if (!webView.isLaidOut) {
+                webView.requestLayout()
+            }
+
             webView.doOnLayout {
                 if (loadRequestId != currentLoadRequestId) {
                     return@doOnLayout
