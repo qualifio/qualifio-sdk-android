@@ -80,6 +80,7 @@ public class QualifioInlineCampaignView private constructor(
     private val webView: WebView = WebView(context)
     private val viewScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var loadJob: Job? = null
+    private var pendingCampaign: String? = null
     private var currentLoadRequestId: Int = 0
     private var lastReportedHeightPx: Int = 0
     private var acceptsContentHeightReports: Boolean = false
@@ -176,6 +177,8 @@ public class QualifioInlineCampaignView private constructor(
         }
 
         hostLifecycle = lifecycle
+
+        startPendingLoad()
     }
 
     override fun onDetachedFromWindow() {
@@ -193,10 +196,13 @@ public class QualifioInlineCampaignView private constructor(
 
     /**
      * Loads a campaign into the inline WebView.
+     *
+     * Loading starts immediately if the view is attached to a window, otherwise once it is attached.
+     * Calling this before the view is attached replaces the pending campaign.
      */
     @JvmOverloads
     public fun loadCampaign(campaign: String = Qualifio.DEFAULT_CAMPAIGN) {
-        val configuration = Qualifio.configuration ?: run {
+        if (Qualifio.configuration == null) {
             logger.error("No configuration set. Please call Qualifio.configure()")
             return
         }
@@ -205,6 +211,18 @@ public class QualifioInlineCampaignView private constructor(
             logger.error("Invalid campaign parameter.")
             return
         }
+
+        pendingCampaign = campaign
+
+        if (isAttachedToWindow) {
+            startPendingLoad()
+        }
+    }
+
+    private fun startPendingLoad() {
+        val configuration = Qualifio.configuration ?: return
+        val campaign = pendingCampaign ?: return
+        pendingCampaign = null
 
         val loadRequestId = ++currentLoadRequestId
         loadJob?.cancel()
