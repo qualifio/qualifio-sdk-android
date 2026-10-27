@@ -15,6 +15,9 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.core.content.withStyledAttributes
 import androidx.core.view.doOnLayout
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.findViewTreeLifecycleOwner
 import com.qualifio.Qualifio
 import com.qualifio.R
 import com.qualifio.internal.logger
@@ -81,6 +84,16 @@ public class QualifioInlineCampaignView private constructor(
     private var lastReportedHeightPx: Int = 0
     private var acceptsContentHeightReports: Boolean = false
     private var didLoadInitialPage: Boolean = false
+    private var hostLifecycle: Lifecycle? = null
+
+    private val lifecycleObserver = LifecycleEventObserver { _, event ->
+        when (event) {
+            Lifecycle.Event.ON_RESUME -> webView.onResume()
+            Lifecycle.Event.ON_PAUSE -> webView.onPause()
+
+            else -> Unit
+        }
+    }
 
     private val loadingViewportHeightPx: Int
         get() = (200 * resources.displayMetrics.density).roundToInt()
@@ -154,11 +167,26 @@ public class QualifioInlineCampaignView private constructor(
         super.onAttachedToWindow()
 
         updateLayoutHeight(lastReportedHeightPx)
-        webView.onResume()
+
+        val lifecycle = findViewTreeLifecycleOwner()?.lifecycle
+        if (lifecycle != null) {
+            lifecycle.addObserver(lifecycleObserver)
+        } else {
+            webView.onResume()
+        }
+
+        hostLifecycle = lifecycle
     }
 
     override fun onDetachedFromWindow() {
-        webView.onPause()
+        val lifecycle = hostLifecycle
+        lifecycle?.removeObserver(lifecycleObserver)
+        hostLifecycle = null
+
+        // Skip if the host already paused it.
+        if (lifecycle == null || lifecycle.currentState == Lifecycle.State.RESUMED) {
+            webView.onPause()
+        }
 
         super.onDetachedFromWindow()
     }
