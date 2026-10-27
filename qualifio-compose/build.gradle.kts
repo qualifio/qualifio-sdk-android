@@ -52,7 +52,6 @@ android {
 dependencies {
     api(project(":qualifio"))
 
-    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
 }
 
