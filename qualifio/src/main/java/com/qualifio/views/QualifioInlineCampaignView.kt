@@ -1,8 +1,11 @@
 package com.qualifio.views
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Rect
+import android.net.Uri
 import android.util.AttributeSet
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceError
@@ -84,6 +87,24 @@ public class QualifioInlineCampaignView private constructor(
 
     private val inlineWebViewClient: WebViewClient =
         object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(
+                view: WebView,
+                request: WebResourceRequest,
+            ): Boolean {
+                if (!request.isForMainFrame) {
+                    return false
+                }
+
+                val scheme = request.url.scheme?.lowercase()
+                if (scheme == "http" || scheme == "https") {
+                    return false
+                }
+
+                // The WebView can't load mailto:, tel:, etc. Let the OS handle them.
+                openExternalUrl(request.url)
+                return true
+            }
+
             override fun onReceivedError(
                 view: WebView,
                 request: WebResourceRequest,
@@ -283,6 +304,19 @@ public class QualifioInlineCampaignView private constructor(
                 currentLayoutParams.height = heightPx
                 webView.layoutParams = currentLayoutParams
             }
+        }
+    }
+
+    private fun openExternalUrl(url: Uri) {
+        val intent = Intent(Intent.ACTION_VIEW, url)
+        if (context !is Activity) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            logger.warning("Failed to open the ${url.scheme} link.", e)
         }
     }
 
