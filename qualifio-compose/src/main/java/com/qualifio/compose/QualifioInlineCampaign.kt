@@ -1,10 +1,6 @@
 package com.qualifio.compose
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.qualifio.Qualifio
@@ -19,8 +15,6 @@ public fun QualifioInlineCampaign(
     campaign: String = Qualifio.DEFAULT_CAMPAIGN,
     autoScrollOnPageLoadEnabled: Boolean = true,
 ) {
-    var currentCampaign by remember { mutableStateOf(campaign) }
-
     AndroidView(
         modifier = modifier,
         factory = { context ->
@@ -33,12 +27,9 @@ public fun QualifioInlineCampaign(
         update = { view ->
             view.autoScrollOnPageLoadEnabled = autoScrollOnPageLoadEnabled
 
-            if (campaign == currentCampaign) {
-                return@AndroidView
+            if (view.campaign != campaign) {
+                view.loadCampaign(campaign)
             }
-
-            currentCampaign = campaign
-            view.loadCampaign(campaign)
         },
     )
 }
