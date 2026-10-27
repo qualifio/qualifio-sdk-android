@@ -316,6 +316,7 @@ public class QualifioInlineCampaignView private constructor(
         )
     }
 
+    // Hides the view while loading. The WebView keeps a viewport so content inside iframes can render and be measured.
     private fun applyLoadingLayout() {
         updateLayoutHeight(0)
         updateWebViewHeight(loadingViewportHeightPx)
