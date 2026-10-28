@@ -12,6 +12,8 @@ import com.qualifio.internal.coroutines.toCallbackFunction
 import com.qualifio.internal.logger
 import com.qualifio.internal.utils.applicationInfo
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -134,6 +136,8 @@ public object Qualifio {
                 url = url.buildUpon().appendQueryParameter("qual_token", token).build()
             }
         } catch (e: Exception) {
+            // Rethrows if cancelled. Our own timeout leaves the coroutine active.
+            currentCoroutineContext().ensureActive()
             logger.error("Failed to acquire a secure token.", e)
         }
 

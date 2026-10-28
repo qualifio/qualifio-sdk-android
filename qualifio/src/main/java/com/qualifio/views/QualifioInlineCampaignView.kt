@@ -21,6 +21,7 @@ import androidx.lifecycle.findViewTreeLifecycleOwner
 import com.qualifio.Qualifio
 import com.qualifio.R
 import com.qualifio.internal.logger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -240,6 +241,8 @@ public class QualifioInlineCampaignView private constructor(
         loadJob = viewScope.launch {
             val url = try {
                 Qualifio.prepareCampaignUrl(configuration, campaign)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error("Failed to prepare the campaign URL.", e)
                 return@launch
