@@ -1,11 +1,12 @@
 # Customizations
 
-The SDK can be tailored to your application in two ways: customizing the **Custom Tab** that
-presents the campaign so it matches your brand, and controlling the **logging** verbosity to
-suit development or production. Both are optional — the SDK works with sensible defaults out
-of the box.
+The SDK can be tailored to your application in two ways: customizing how campaigns are
+presented, in the **Custom Tab** or the **inline view**, to match your brand, and controlling the
+**logging** verbosity to suit development or production. Both are optional — the SDK works with
+sensible defaults out of the box.
 
-- [Custom Tab appearance](#custom-tab-appearance) — style the browser overlay that shows the campaign.
+- [Custom Tab appearance](#custom-tab-appearance) — style the browser overlay that shows launched campaigns.
+- [Inline campaign appearance](#inline-campaign-appearance) — style the view that shows inline campaigns.
 - [Logging](#logging) — control the SDK's log output.
 
 ---
@@ -53,6 +54,37 @@ typealias QualifioCustomTabsCustomizer = (builder: CustomTabsIntent.Builder) -> 
 > applied on top and can override it.
 
 Pass `null` to `setCustomTabsCustomizer` to remove a previously registered customizer.
+
+---
+
+## Inline campaign appearance
+
+[Inline campaigns](./03-campaigns.md#inline-campaigns) are shown in `QualifioInlineCampaignView`,
+which can be styled like any other view.
+
+```xml
+<style name="AppQualifioInlineCampaignView">
+    <item name="android:background">#3F51B5</item>
+</style>
+```
+
+Apply it to a single view:
+
+```xml
+<com.qualifio.views.QualifioInlineCampaignView
+    android:id="@+id/qualifioInlineCampaignView"
+    style="@style/AppQualifioInlineCampaignView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" />
+```
+
+Or set it as the default style for all inline views from your app theme:
+
+```xml
+<style name="AppTheme" parent="...">
+    <item name="qualifioInlineCampaignViewStyle">@style/AppQualifioInlineCampaignView</item>
+</style>
+```
 
 ---
 
