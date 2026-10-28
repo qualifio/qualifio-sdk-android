@@ -31,5 +31,8 @@ public fun QualifioInlineCampaign(
                 view.loadCampaign(campaign)
             }
         },
+        onRelease = { view ->
+            view.destroy()
+        },
     )
 }

@@ -162,6 +162,14 @@ fun InlineCampaign() {
 
 Changing `campaign` loads the new campaign.
 
+### Releasing the view
+
+`QualifioInlineCampaignView.destroy()` releases the view's WebView and cancels any pending
+campaign load. A destroyed view can't load campaigns anymore.
+
+`QualifioInlineCampaign` in Jetpack Compose calls `destroy()` for you when it leaves the
+composition.
+
 ### Attributes and properties
 
 | XML attribute | Property | Default | Description |

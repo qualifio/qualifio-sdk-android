@@ -26,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -93,6 +94,7 @@ public class QualifioInlineCampaignView private constructor(
     private var acceptsContentHeightReports: Boolean = false
     private var didLoadInitialPage: Boolean = false
     private var hostLifecycle: Lifecycle? = null
+    private var isDestroyed: Boolean = false
 
     private val lifecycleObserver = LifecycleEventObserver { _, event ->
         when (event) {
@@ -174,6 +176,10 @@ public class QualifioInlineCampaignView private constructor(
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
+        if (isDestroyed) {
+            return
+        }
+
         updateLayoutHeight(lastReportedHeightPx)
 
         val lifecycle = findViewTreeLifecycleOwner()?.lifecycle
@@ -189,6 +195,11 @@ public class QualifioInlineCampaignView private constructor(
     }
 
     override fun onDetachedFromWindow() {
+        if (isDestroyed) {
+            super.onDetachedFromWindow()
+            return
+        }
+
         val lifecycle = hostLifecycle
         lifecycle?.removeObserver(lifecycleObserver)
         hostLifecycle = null
@@ -209,6 +220,11 @@ public class QualifioInlineCampaignView private constructor(
      */
     @JvmOverloads
     public fun loadCampaign(campaign: String = Qualifio.DEFAULT_CAMPAIGN) {
+        if (isDestroyed) {
+            logger.error("Cannot load a campaign into a destroyed view.")
+            return
+        }
+
         if (Qualifio.configuration == null) {
             logger.error("No configuration set. Please call Qualifio.configure()")
             return
@@ -225,6 +241,25 @@ public class QualifioInlineCampaignView private constructor(
         if (isAttachedToWindow) {
             startPendingLoad()
         }
+    }
+
+    /**
+     * Releases the WebView and cancels any pending campaign load.
+     *
+     * The view cannot be used after it has been destroyed.
+     */
+    public fun destroy() {
+        if (isDestroyed) {
+            return
+        }
+
+        isDestroyed = true
+        acceptsContentHeightReports = false
+        viewScope.cancel()
+
+        hostLifecycle?.removeObserver(lifecycleObserver)
+        removeView(webView)
+        webView.destroy()
     }
 
     private fun startPendingLoad() {
