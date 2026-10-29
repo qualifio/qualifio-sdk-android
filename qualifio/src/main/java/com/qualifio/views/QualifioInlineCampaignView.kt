@@ -28,7 +28,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlin.math.ceil
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
@@ -367,13 +367,14 @@ public class QualifioInlineCampaignView private constructor(
 
     private fun reportContentHeight(heightCssPx: Float) {
         val density = resources.displayMetrics.density
-        val heightPx = ceil(heightCssPx * density).roundToInt()
+        val heightPx = (heightCssPx * density).roundToInt()
 
         if (heightPx < 1) {
             return
         }
 
-        if (heightPx == lastReportedHeightPx) {
+        // Skip 1px changes so rounding differences can't keep resizing the view.
+        if (abs(heightPx - lastReportedHeightPx) <= 1) {
             return
         }
 
@@ -524,7 +525,7 @@ public class QualifioInlineCampaignView private constructor(
                   }
                 }
 
-                return Math.ceil(height);
+                return height;
               };
 
               var lastHeight = 0;
