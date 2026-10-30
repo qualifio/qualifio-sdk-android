@@ -1,8 +1,8 @@
 # Qualifio Android SDK — Documentation
 
 The Qualifio Android SDK lets you embed and launch Qualifio campaigns directly inside your
-Android application, either in a Chrome Custom Tab on top of your app or inline in your own
-screens (Views or Jetpack Compose), without sending the user to a separate browser app.
+Android application, either in a Chrome Custom Tab on top of your app or inline with your 
+app's content (using Views or Jetpack Compose), without sending the user to a separate browser app.
 
 This documentation is organized by topic. If you are integrating the SDK for the first
 time, start with **Getting Started**.

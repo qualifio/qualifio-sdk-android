@@ -100,7 +100,7 @@ lifecycleScope.launch {
 `launchCampaign` is a `suspend` function, so call it from a coroutine scope. From Java, or
 when you prefer a callback, use the [callback overload](./03-campaigns.md#launching-from-java-or-with-a-callback).
 
-To show the campaign inside your own screen instead, see
+To show the campaign inline with the content of your app, see
 [Inline campaigns](./03-campaigns.md#inline-campaigns).
 
 ## Next steps

@@ -5,7 +5,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/qualifio/qualifio-sdk-android)](https://github.com/qualifio/qualifio-sdk-android/releases)
 [![License](https://img.shields.io/github/license/qualifio/qualifio-sdk-android)](https://github.com/qualifio/qualifio-sdk-android/blob/main/LICENSE)
 
-The Qualifio Android SDK lets you embed and launch Qualifio campaigns directly inside your application, either in a Chrome Custom Tab on top of your app or inline in your own screens, without sending the user to a separate browser.
+The Qualifio Android SDK lets you embed and launch Qualifio campaigns directly inside your application, either in a Chrome Custom Tab on top of your app or inline with your app's content, without sending the user to a separate browser.
 
 Table of contents
 =================
@@ -18,7 +18,7 @@ Table of contents
 
 ## Features
 
-- **Campaigns**: Launch campaigns in a Custom Tab or embed them inline in your own screens (Views or Jetpack Compose).
+- **Campaigns**: Launch campaigns in a Custom Tab or embed them inline with your app's content (using Views or Jetpack Compose).
 - **Secure Token**: Personalize campaigns with user data using securely generated tokens.
 - **Actito Integration**: Automatically display campaigns triggered by remote notifications and inbox messages sent through Actito.
 

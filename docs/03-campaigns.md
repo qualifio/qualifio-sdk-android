@@ -14,8 +14,8 @@ that you display to your users. The SDK can present campaigns in two ways:
 
 ## The campaign parameter
 
-Both ways identify the campaign by its **slug**, passed as the `campaign` parameter. The slug
-identifies the campaign within your Qualifio account. The SDK combines it with your configured
+Both presentation options identify the campaign by its **slug**, passed as the `campaign` parameter.
+The slug identifies the campaign within your Qualifio account. The SDK combines it with your configured
 domain to build the campaign URL.
 
 | Parameter | Type | Required | Default | Description |
@@ -88,7 +88,7 @@ gesture, returning to your app.
 - **Not configured:** if the SDK has not been configured, `launchCampaign` throws an
   `IllegalStateException` (`No configuration set. Please call Qualifio.configure()`). Always
   configure first — see [Configuration](./02-configuration.md).
-- **Launch failure:** if no browser can handle the Custom Tab, the call throws. Wrap
+- **Presentation failure:** if no browser can handle the Custom Tab, the call throws. Wrap
   `launchCampaign` in a `try/catch` (or handle `onFailure` in the callback overload) to
   surface problems gracefully.
 
