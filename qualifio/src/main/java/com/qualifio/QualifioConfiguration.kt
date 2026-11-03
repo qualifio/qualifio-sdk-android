@@ -1,6 +1,5 @@
 package com.qualifio
 
-import androidx.core.net.toUri
 import com.qualifio.internal.logger
 
 public data class QualifioConfiguration(
@@ -8,8 +7,7 @@ public data class QualifioConfiguration(
 ) {
     internal val isValid: Boolean
         get() {
-            val hostUri = host.toUri()
-            if (hostUri.scheme == null || hostUri.host == null || hostUri.query != null) {
+            if (!HOST_REGEX.matches(domain)) {
                 logger.debug("Invalid domain value.")
                 return false
             }
@@ -25,4 +23,11 @@ public data class QualifioConfiguration(
 
             return domain
         }
+
+    private companion object {
+        @Suppress("detekt:MaxLineLength")
+        private val HOST_REGEX = Regex(
+            "^(https?://)?(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])(:[0-9]{1,5})?$",
+        )
+    }
 }
