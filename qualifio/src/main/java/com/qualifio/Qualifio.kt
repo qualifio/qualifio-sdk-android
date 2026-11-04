@@ -12,6 +12,8 @@ import com.qualifio.internal.coroutines.toCallbackFunction
 import com.qualifio.internal.logger
 import com.qualifio.internal.utils.applicationInfo
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -23,6 +25,7 @@ public typealias QualifioSecureTokenGenerator = suspend (String) -> String?
 public typealias QualifioCustomTabsCustomizer = (builder: CustomTabsIntent.Builder) -> Unit
 
 public object Qualifio {
+    public const val DEFAULT_CAMPAIGN: String = "sdk"
 
     private var context: WeakReference<Context>? = null
     private var secureTokenGenerator: QualifioSecureTokenGenerator? = null
@@ -87,7 +90,7 @@ public object Qualifio {
         customTabsCustomizer = customizer
     }
 
-    public suspend fun launchCampaign(campaign: String = "sdk"): Unit = withContext(Dispatchers.IO) {
+    public suspend fun launchCampaign(campaign: String = DEFAULT_CAMPAIGN): Unit = withContext(Dispatchers.IO) {
         val configuration = configuration
             ?: throw IllegalStateException("No configuration set. Please call Qualifio.configure()")
 
@@ -95,22 +98,7 @@ public object Qualifio {
             throw IllegalArgumentException("Invalid campaign parameter.")
         }
 
-        var url = determineCampaignUrl(configuration, campaign.trim())
-        logger.debug("Preparing campaign $url")
-
-        try {
-            val timeoutMillis = getSecureTokenGeneratorTimeoutMilliseconds(requireContext())
-            val token = withTimeout(timeoutMillis) {
-                secureTokenGenerator?.invoke(campaign)
-            }
-
-            if (token != null) {
-                logger.debug("Setting the provided secure token.")
-                url = url.buildUpon().appendQueryParameter("qual_token", token).build()
-            }
-        } catch (e: Exception) {
-            logger.error("Failed to acquire a secure token.", e)
-        }
+        val url = prepareCampaignUrl(configuration, campaign)
 
         try {
             CustomTabsIntent.Builder()
@@ -126,11 +114,34 @@ public object Qualifio {
 
     @JvmStatic
     @JvmOverloads
-    public fun launchCampaign(group: String = "sdk", callback: QualifioCallback<Unit>): Unit =
-        toCallbackFunction(::launchCampaign)(group, callback::onSuccess, callback::onFailure)
+    public fun launchCampaign(campaign: String = DEFAULT_CAMPAIGN, callback: QualifioCallback<Unit>): Unit =
+        toCallbackFunction(::launchCampaign)(campaign, callback::onSuccess, callback::onFailure)
 
     internal fun requireContext(): Context {
         return context?.get() ?: error("Cannot find the context for Qualifio.")
+    }
+
+    internal suspend fun prepareCampaignUrl(configuration: QualifioConfiguration, campaign: String): Uri {
+        var url = determineCampaignUrl(configuration, campaign.trim())
+        logger.debug("Preparing campaign $url")
+
+        try {
+            val timeoutMillis = getSecureTokenGeneratorTimeoutMilliseconds(requireContext())
+            val token = withTimeout(timeoutMillis) {
+                secureTokenGenerator?.invoke(campaign)
+            }
+
+            if (token != null) {
+                logger.debug("Setting the provided secure token.")
+                url = url.buildUpon().appendQueryParameter("qual_token", token).build()
+            }
+        } catch (e: Exception) {
+            // Rethrows if cancelled. Our own timeout leaves the coroutine active.
+            currentCoroutineContext().ensureActive()
+            logger.error("Failed to acquire a secure token.", e)
+        }
+
+        return url
     }
 
     private fun hasDebugLoggingEnabled(context: Context): Boolean {

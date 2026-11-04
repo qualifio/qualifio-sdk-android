@@ -16,6 +16,15 @@ dependencies {
 }
 ```
 
+If you are using Jetpack Compose and want to embed inline campaigns, also add the following
+dependency:
+
+```kotlin
+dependencies {
+    implementation("com.qualifio:qualifio-compose:{{version}}")
+}
+```
+
 > Replace `{{version}}` with the release you want to use (for example the
 > [latest published version](https://github.com/qualifio/qualifio-sdk-android/releases)).
 > Pin an exact version in production so a new release can never change your app's behavior
@@ -44,9 +53,6 @@ android {
     }
 }
 ```
-
-The SDK presents campaigns in a [Chrome Custom Tab](https://developer.chrome.com/docs/android/custom-tabs),
-so no additional UI dependencies are required — `androidx.browser` is pulled in transitively.
 
 ## Your first campaign
 
@@ -92,11 +98,15 @@ lifecycleScope.launch {
 ```
 
 `launchCampaign` is a `suspend` function, so call it from a coroutine scope. From Java, or
-when you prefer a callback, use the [callback overload](./03-campaigns.md).
+when you prefer a callback, use the [callback overload](./03-campaigns.md#launching-from-java-or-with-a-callback).
+
+To show the campaign inline with the content of your app, see
+[Inline campaigns](./03-campaigns.md#inline-campaigns).
 
 ## Next steps
 
 - [Configuration](./02-configuration.md) — automatic vs. manual configuration.
+- [Campaigns](./03-campaigns.md) — launch campaigns or embed them inline.
 - [Secure Tokens](./04-secure-tokens.md) — personalize campaigns with user data.
-- [Customizations](./06-customizations.md) — style the Custom Tab to match your brand.
+- [Customizations](./06-customizations.md) — style the Custom Tab or the inline view to match your brand.
 - [Notifications](./05-notifications.md) — trigger campaigns from Actito.

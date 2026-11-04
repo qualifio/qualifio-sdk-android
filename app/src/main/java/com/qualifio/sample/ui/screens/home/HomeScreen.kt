@@ -10,6 +10,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.qualifio.sample.R
 import com.qualifio.sample.ui.screens.home.campaign.CampaignCard
+import com.qualifio.sample.ui.screens.home.campaign.InlineCampaignCodeCard
+import com.qualifio.sample.ui.screens.home.campaign.InlineCampaignComposeCard
+import com.qualifio.sample.ui.screens.home.campaign.InlineCampaignXmlCard
 import com.qualifio.sample.ui.screens.home.components.ContentCard
 
 @Composable
@@ -25,6 +28,12 @@ internal fun HomeScreen() {
         )
 
         CampaignCard()
+
+        InlineCampaignXmlCard()
+
+        InlineCampaignCodeCard()
+
+        InlineCampaignComposeCard()
 
         ContentCard(
             title = stringResource(R.string.home_content_title),
