@@ -576,8 +576,8 @@ public class QualifioInlineCampaignView private constructor(
               window.addEventListener('resize', report);
 
               var iframes = document.querySelectorAll('iframe');
-              for (var i = 0; i < iframes.length; i += 1) {
-                iframes[i].addEventListener('load', report);
+              if (iframes.length === 1) {
+                iframes[0].addEventListener('load', report);
               }
 
               report();
