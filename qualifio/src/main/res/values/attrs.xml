@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="qualifioInlineCampaignViewStyle" format="reference" />
+
+    <declare-styleable name="QualifioInlineCampaignView">
+        <attr name="qualifioCampaign" format="string" />
+        <attr name="qualifioAutoScrollOnPageLoadEnabled" format="boolean" />
+    </declare-styleable>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.Sample" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="qualifioInlineCampaignViewStyle">@style/SampleQualifioInlineCampaignView</item>
+    </style>
+
+    <style name="SampleQualifioInlineCampaignView">
+        <item name="android:background">#3F51B5</item>
+        <item name="android:padding">8dp</item>
+    </style>
+</resources>
