@@ -20,8 +20,8 @@
     <string name="home_inline_campaign_compose_title">Inline campaign (Compose)</string>
     <string name="home_campaign_input">Campaign Path</string>
     <string name="home_campaign_button">Launch Campaign</string>
-    <string name="home_inline_campaign_xmas_button">Load sdk-xmas</string>
-    <string name="home_inline_campaign_default_button">Load sdk</string>
+    <string name="home_inline_campaign_input">Inline Campaign Path</string>
+    <string name="home_inline_campaign_button">Load Inline Campaign</string>
 
     <string name="settings_configuration_title">Configuration</string>
     <string name="settings_configuration_domain_label">Domain</string>

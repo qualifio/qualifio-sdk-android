@@ -17,6 +17,8 @@ import timber.log.Timber
 import java.util.Date
 import javax.inject.Inject
 
+internal const val SAMPLE_CAMPAIGN = "sdk-xmas"
+
 @HiltAndroidApp
 class SampleApplication : Application() {
     @Inject
@@ -87,7 +89,7 @@ class SampleApplication : Application() {
                 val showCampaignAtLaunch = dataStore.showCampaignAtLaunchStream.first()
                 if (finished && showCampaignAtLaunch) {
                     delay(2_000)
-                    Qualifio.launchCampaign()
+                    Qualifio.launchCampaign(SAMPLE_CAMPAIGN)
                 }
             }
         }
