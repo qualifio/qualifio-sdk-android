@@ -140,7 +140,7 @@ public class QualifioInlineCampaignView private constructor(
 
             override fun onPageFinished(view: WebView, url: String) {
                 acceptsContentHeightReports = true
-                reportContentHeightFromDocument()
+                evaluateContentHeightScript()
 
                 if (!didLoadInitialPage) {
                     didLoadInitialPage = true
@@ -424,7 +424,7 @@ public class QualifioInlineCampaignView private constructor(
         }
     }
 
-    private fun reportContentHeightFromDocument() {
+    private fun evaluateContentHeightScript() {
         webView.evaluateJavascript(
             "$CONTENT_HEIGHT_SCRIPT();",
             null,
@@ -434,7 +434,7 @@ public class QualifioInlineCampaignView private constructor(
     private inner class ContentHeightBridge {
         @JavascriptInterface
         fun postContentHeight(heightString: String) {
-            val height = heightString.toFloatOrNull() ?: return
+            val height = heightString.toFloatOrNull()?.takeIf { it.isFinite() } ?: return
 
             webView.post {
                 if (!acceptsContentHeightReports) {
@@ -455,132 +455,30 @@ public class QualifioInlineCampaignView private constructor(
         private const val CONTENT_HEIGHT_BRIDGE_NAME = "QualifioInlineCampaignView"
         private const val CONTENT_HEIGHT_SCRIPT = """
             (function() {
-              if (window.__qualifioInlineCampaignHeightObserver) {
-                window.__qualifioInlineCampaignHeightObserver.report();
-                return;
-              }
+              if (!window.__qualifioInlineCampaignHeightListener) {
+                window.__qualifioInlineCampaignHeightListener = true;
 
-              var measureDocument = function(
-                targetDocument,
-                targetWindow,
-                correctIframeHeight
-              ) {
-                var body = targetDocument.body;
-                var scrollY = targetWindow ? targetWindow.pageYOffset || 0 : 0;
-                var height = 0;
-
-                if (body) {
-                  var elements = body.querySelectorAll('*');
-                  for (var i = 0; i < elements.length; i += 1) {
-                    height = Math.max(
-                      height,
-                      elements[i].getBoundingClientRect().bottom + scrollY
-                    );
+                window.addEventListener('message', function(event) {
+                  var data = event.data;
+                  if (
+                    event.source !== window ||
+                    !data ||
+                    data.type !== 'embed-size' ||
+                    typeof data.height !== 'number' ||
+                    !isFinite(data.height) ||
+                    !(data.height > 0)
+                  ) {
+                    return;
                   }
-                }
 
-                if (height <= 0) {
-                  var documentElement = targetDocument.documentElement;
-                  height = Math.max(
-                    body ? body.scrollHeight : 0,
-                    documentElement ? documentElement.scrollHeight : 0,
-                    body ? body.offsetHeight : 0,
-                    documentElement ? documentElement.offsetHeight : 0
-                  );
-                }
-
-                if (correctIframeHeight && body) {
-                  var iframes = body.querySelectorAll('iframe');
-                  if (iframes.length === 1) {
-                    var iframe = iframes[0];
-                    var hasDeclaredHeight =
-                      iframe.style.height !== '' || iframe.hasAttribute('height');
-                    if (hasDeclaredHeight) {
-                      try {
-                        var iframeDocument = iframe.contentDocument;
-                        if (iframeDocument) {
-                          if (
-                            !iframeDocument.body ||
-                            iframeDocument.body.children.length === 0
-                          ) {
-                            return 0;
-                          }
-
-                          var contentHeight = measureDocument(
-                            iframeDocument,
-                            iframe.contentWindow,
-                            false
-                          );
-                          if (contentHeight <= 0) {
-                            return 0;
-                          }
-
-                          height +=
-                            contentHeight - iframe.getBoundingClientRect().height;
-                        }
-                      } catch (error) {
-                        // Cross-origin frames keep their rendered outer size.
-                      }
-                    }
-                  }
-                }
-
-                return height;
-              };
-
-              var lastHeight = 0;
-              var reportScheduled = false;
-              var postContentHeight = function(height) {
-                if (height === lastHeight) {
-                  return;
-                }
-
-                lastHeight = height;
-                if (window.QualifioInlineCampaignView && window.QualifioInlineCampaignView.postContentHeight) {
-                  window.QualifioInlineCampaignView.postContentHeight(height.toString());
-                }
-              };
-
-              var report = function() {
-                if (reportScheduled) {
-                  return;
-                }
-
-                reportScheduled = true;
-                window.requestAnimationFrame(function() {
-                  reportScheduled = false;
-                  postContentHeight(measureDocument(document, window, true));
-                });
-              };
-
-              window.__qualifioInlineCampaignHeightObserver = { report: report };
-
-              if (window.ResizeObserver) {
-                var resizeObserver = new ResizeObserver(report);
-                resizeObserver.observe(document.documentElement);
-                if (document.body) {
-                  resizeObserver.observe(document.body);
-                }
-              }
-
-              if (window.MutationObserver) {
-                var mutationObserver = new MutationObserver(report);
-                mutationObserver.observe(document.documentElement, {
-                  attributes: true,
-                  childList: true,
-                  subtree: true
+                  window.$CONTENT_HEIGHT_BRIDGE_NAME.postContentHeight(data.height.toString());
                 });
               }
 
-              window.addEventListener('load', report);
-              window.addEventListener('resize', report);
-
-              var iframes = document.querySelectorAll('iframe');
-              if (iframes.length === 1) {
-                iframes[0].addEventListener('load', report);
+              // The campaign script reports while the page loads, before this script runs, so ask for the current height.
+              if (window.parentIFrame && typeof window.parentIFrame.size === 'function') {
+                window.parentIFrame.size();
               }
-
-              report();
             })
         """
     }
