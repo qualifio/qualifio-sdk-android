@@ -3,6 +3,7 @@ package com.qualifio.views
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Rect
 import android.net.Uri
@@ -18,6 +19,8 @@ import androidx.core.view.doOnLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import com.qualifio.Qualifio
 import com.qualifio.R
 import com.qualifio.internal.logger
@@ -91,8 +94,7 @@ public class QualifioInlineCampaignView private constructor(
     private var pendingCampaign: String? = null
     private var currentLoadRequestId: Int = 0
     private var lastReportedHeightPx: Int = 0
-    private var acceptsContentHeightReports: Boolean = false
-    private var didLoadInitialPage: Boolean = false
+    private var loadPhase: LoadPhase = LoadPhase.PREPARING
     private var hostLifecycle: Lifecycle? = null
     private var isDestroyed: Boolean = false
 
@@ -138,18 +140,33 @@ public class QualifioInlineCampaignView private constructor(
                 }
             }
 
+            override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+                when (loadPhase) {
+                    LoadPhase.STARTING -> loadPhase = LoadPhase.FIRST_PAGE
+
+                    LoadPhase.LOADED -> {
+                        if (autoScrollOnPageLoadEnabled) {
+                            scrollContainingScrollViewToTop()
+                        }
+                    }
+
+                    // The previous page navigating before loadUrl, or a redirect of the first page.
+                    LoadPhase.PREPARING, LoadPhase.FIRST_PAGE -> Unit
+                }
+            }
+
             override fun onPageFinished(view: WebView, url: String) {
-                acceptsContentHeightReports = true
+                when (loadPhase) {
+                    LoadPhase.FIRST_PAGE -> loadPhase = LoadPhase.LOADED
+
+                    LoadPhase.LOADED -> Unit
+
+                    // A late finish from the page replaced by a new load.
+                    LoadPhase.PREPARING, LoadPhase.STARTING -> return
+                }
+
+                // Catches up on the first page, and is the fallback when the document-start script didn't run.
                 evaluateContentHeightScript()
-
-                if (!didLoadInitialPage) {
-                    didLoadInitialPage = true
-                    return
-                }
-
-                if (autoScrollOnPageLoadEnabled) {
-                    scrollContainingScrollViewToTop()
-                }
             }
         }
 
@@ -254,7 +271,6 @@ public class QualifioInlineCampaignView private constructor(
         }
 
         isDestroyed = true
-        acceptsContentHeightReports = false
         viewScope.cancel()
 
         hostLifecycle?.removeObserver(lifecycleObserver)
@@ -270,7 +286,7 @@ public class QualifioInlineCampaignView private constructor(
         val loadRequestId = ++currentLoadRequestId
         loadJob?.cancel()
         lastReportedHeightPx = 0
-        acceptsContentHeightReports = false
+        loadPhase = LoadPhase.PREPARING
         applyLoadingLayout()
 
         loadJob = viewScope.launch {
@@ -293,7 +309,7 @@ public class QualifioInlineCampaignView private constructor(
                     return@doOnLayout
                 }
 
-                didLoadInitialPage = false
+                loadPhase = LoadPhase.STARTING
                 webView.loadUrl(url.toString())
             }
         }
@@ -347,6 +363,11 @@ public class QualifioInlineCampaignView private constructor(
         webView.settings.domStorageEnabled = true
         webView.settings.javaScriptEnabled = true
         webView.addJavascriptInterface(ContentHeightBridge(), CONTENT_HEIGHT_BRIDGE_NAME)
+
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            WebViewCompat.addDocumentStartJavaScript(webView, CONTENT_HEIGHT_SCRIPT, setOf("*"))
+        }
+
         webView.setBackgroundColor(Color.TRANSPARENT)
         webView.webViewClient = inlineWebViewClient
 
@@ -426,7 +447,7 @@ public class QualifioInlineCampaignView private constructor(
 
     private fun evaluateContentHeightScript() {
         webView.evaluateJavascript(
-            "$CONTENT_HEIGHT_SCRIPT();",
+            CONTENT_HEIGHT_SCRIPT,
             null,
         )
     }
@@ -437,13 +458,21 @@ public class QualifioInlineCampaignView private constructor(
             val height = heightString.toFloatOrNull()?.takeIf { it.isFinite() } ?: return
 
             webView.post {
-                if (!acceptsContentHeightReports) {
+                // Drops reports until the new campaign's first page has finished.
+                if (isDestroyed || loadPhase != LoadPhase.LOADED) {
                     return@post
                 }
 
                 reportContentHeight(height)
             }
         }
+    }
+
+    private enum class LoadPhase {
+        PREPARING,
+        STARTING,
+        FIRST_PAGE,
+        LOADED,
     }
 
     private data class InlineCampaignConfiguration(
@@ -455,6 +484,10 @@ public class QualifioInlineCampaignView private constructor(
         private const val CONTENT_HEIGHT_BRIDGE_NAME = "QualifioInlineCampaignView"
         private const val CONTENT_HEIGHT_SCRIPT = """
             (function() {
+              if (window !== window.top) {
+                return;
+              }
+
               if (!window.__qualifioInlineCampaignHeightListener) {
                 window.__qualifioInlineCampaignHeightListener = true;
 
@@ -464,9 +497,7 @@ public class QualifioInlineCampaignView private constructor(
                     event.source !== window ||
                     !data ||
                     data.type !== 'embed-size' ||
-                    typeof data.height !== 'number' ||
-                    !isFinite(data.height) ||
-                    !(data.height > 0)
+                    typeof data.height !== 'number'
                   ) {
                     return;
                   }
@@ -475,11 +506,11 @@ public class QualifioInlineCampaignView private constructor(
                 });
               }
 
-              // The campaign script reports while the page loads, before this script runs, so ask for the current height.
+              // Earlier reports may have been missed or dropped, so ask for the current height.
               if (window.parentIFrame && typeof window.parentIFrame.size === 'function') {
                 window.parentIFrame.size();
               }
-            })
+            })()
         """
     }
 }
