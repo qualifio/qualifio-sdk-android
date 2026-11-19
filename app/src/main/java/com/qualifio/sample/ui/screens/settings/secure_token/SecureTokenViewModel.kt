@@ -50,6 +50,10 @@ class SecureTokenViewModel @Inject constructor(
     fun updateSecureTokenSecret(secret: String) {
         viewModelScope.launch {
             dataStore.updateSecureTokenSecret(secret)
+
+            if (secret.isBlank()) {
+                dataStore.updateUseSecureToken(false)
+            }
         }
     }
 
