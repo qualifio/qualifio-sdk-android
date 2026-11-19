@@ -9,8 +9,6 @@ import com.qualifio.QualifioConfiguration
 import com.qualifio.sample.storage.SampleDataStore
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -31,8 +29,6 @@ class SampleApplication : Application() {
 
         // Customise Qualifio.
         Qualifio.setSecureTokenProvider(::generateSecureToken)
-
-        observeConfigurationState()
 
         mainScope.launch {
             val domain = dataStore.domainStream.first() ?: return@launch
@@ -78,18 +74,6 @@ class SampleApplication : Application() {
             }
         } else {
             return null
-        }
-    }
-
-    fun observeConfigurationState() {
-        mainScope.launch {
-            dataStore.isConfigurationFinishedStream.distinctUntilChanged().collect { finished ->
-                val showCampaignAtLaunch = dataStore.showCampaignAtLaunchStream.first()
-                if (finished && showCampaignAtLaunch) {
-                    delay(2_000)
-                    Qualifio.launchCampaign()
-                }
-            }
         }
     }
 }
