@@ -3,7 +3,6 @@
 
     <string name="navigation_home">Home</string>
     <string name="navigation_settings">Settings</string>
-    <string name="navigation_configuration">Configuration</string>
     <string name="navigation_secure_token_fields">Secure Token Fields</string>
 
     <string name="configuration_input">Domain</string>
@@ -47,7 +46,5 @@
     <string name="secure_token_fields_value_label">Value</string>
     <string name="secure_token_fields_add_field_button">Add field</string>
 
-    <string name="jwt_subject">1234</string>
     <string name="jwt_issuer">Qualifio</string>
-    <string name="jwt_form">form</string>
 </resources>

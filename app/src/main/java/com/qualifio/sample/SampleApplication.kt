@@ -3,19 +3,19 @@ package com.qualifio.sample
 import android.app.Application
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.auth0.jwt.exceptions.JWTCreationException
 import com.qualifio.Qualifio
 import com.qualifio.QualifioConfiguration
 import com.qualifio.sample.storage.SampleDataStore
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.Date
 import javax.inject.Inject
+
+private const val CAMPAIGN_ID_CLAIM = "campaignId"
+private const val FORM_CLAIM = "form"
 
 @HiltAndroidApp
 class SampleApplication : Application() {
@@ -32,8 +32,6 @@ class SampleApplication : Application() {
         // Customise Qualifio.
         Qualifio.setSecureTokenProvider(::generateSecureToken)
 
-        observeConfigurationState()
-
         mainScope.launch {
             val domain = dataStore.domainStream.first() ?: return@launch
 
@@ -45,51 +43,32 @@ class SampleApplication : Application() {
     }
 
     suspend fun generateSecureToken(campaign: String): String? {
-        val useSecureToken = dataStore.useSecureTokenStream.first()
-
-        return if (useSecureToken) {
-            try {
-                val secureTokenFields = dataStore.secureTokenFieldsStream.first()
-                val secureTokenSecret = dataStore.secureTokenSecretStream.first()
-                val secureTokenSubject = dataStore.secureTokenSubjectStream.first()
-
-                val algorithm = Algorithm.HMAC256(secureTokenSecret)
-
-                val token = JWT.create()
-                    .withSubject(secureTokenSubject)
-                    .withIssuer(this.getString(R.string.jwt_issuer))
-                    .withIssuedAt(Date())
-                    .apply {
-                        secureTokenFields?.let {
-                            val campaignId = it["campaignId"]
-                            if (campaignId != null) withClaim("campaignId", campaignId)
-
-                            withClaim(
-                                "form",
-                                it.filterKeys { key -> key != "campaignId" },
-                            )
-                        }
-                    }
-                    .sign(algorithm)
-
-                token
-            } catch (_: JWTCreationException) {
-                return null
-            }
-        } else {
+        if (!dataStore.useSecureTokenStream.first()) {
             return null
         }
-    }
 
-    fun observeConfigurationState() {
-        mainScope.launch {
-            dataStore.isConfigurationFinishedStream.distinctUntilChanged().collect { finished ->
-                val showCampaignAtLaunch = dataStore.showCampaignAtLaunchStream.first()
-                if (finished && showCampaignAtLaunch) {
-                    delay(2_000)
-                    Qualifio.launchCampaign()
+        val secret = dataStore.secureTokenSecretStream.first()
+        val subject = dataStore.secureTokenSubjectStream.first()
+        val fields = dataStore.secureTokenFieldsStream.first().orEmpty()
+
+        return try {
+            JWT.create()
+                .withSubject(subject)
+                .withIssuer(getString(R.string.jwt_issuer))
+                .withIssuedAt(Date())
+                .apply {
+                    fields[CAMPAIGN_ID_CLAIM]?.let { withClaim(CAMPAIGN_ID_CLAIM, it) }
+
+                    val formFields = fields.filterKeys { it != CAMPAIGN_ID_CLAIM }
+                    if (formFields.isNotEmpty()) {
+                        withClaim(FORM_CLAIM, formFields)
+                    }
                 }
-            }
+                .sign(Algorithm.HMAC256(secret))
+        } catch (e: Exception) {
+            // Signing fails with an IllegalArgumentException (not a JWTCreationException) for a blank secret.
+            Timber.e(e, "Failed to generate the secure token.")
+            null
         }
     }
 }

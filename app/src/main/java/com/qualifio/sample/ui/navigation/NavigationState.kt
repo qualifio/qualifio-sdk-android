@@ -72,7 +72,6 @@ fun rememberNavigationState(
 val serializersConfig = SavedStateConfiguration {
     serializersModule = SerializersModule {
         polymorphic(NavKey::class) {
-            subclass(Route.Configuration::class, Route.Configuration.serializer())
             subclass(Route.Home::class, Route.Home.serializer())
             subclass(Route.Settings::class, Route.Settings.serializer())
             subclass(Route.SecureTokenFields::class, Route.SecureTokenFields.serializer())

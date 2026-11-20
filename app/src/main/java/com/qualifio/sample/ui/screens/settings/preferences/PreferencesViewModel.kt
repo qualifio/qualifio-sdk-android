@@ -17,7 +17,7 @@ class PreferencesViewModel @Inject constructor(
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5000),
-            true,
+            false,
         )
 
     fun updateShowCampaignAtLaunch(enabled: Boolean) {

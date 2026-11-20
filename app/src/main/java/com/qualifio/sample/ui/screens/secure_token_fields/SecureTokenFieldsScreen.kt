@@ -111,7 +111,9 @@ fun SecureTokenFieldsScreen(
 
         Button(
             onClick = {
-                if (keyInput.isBlank() || fields?.containsKey(keyInput) == true) {
+                val key = keyInput.trim()
+
+                if (key.isEmpty() || fields?.containsKey(key) == true) {
                     keyError = true
                     return@Button
                 }

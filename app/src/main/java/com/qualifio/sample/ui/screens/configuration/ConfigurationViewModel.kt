@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 private val DOMAIN_REGEX =
-    "^(http(s)?://)?([a-z0-9]+(-[a-z0-9]+)*\\.)+[a-z]{2,}(\\d+)?$".toRegex()
+    "^(https?://)?(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])(:[0-9]{1,5})?$".toRegex()
 
 @HiltViewModel
 class ConfigurationViewModel @Inject constructor(
@@ -27,20 +27,6 @@ class ConfigurationViewModel @Inject constructor(
     }
 
     fun validateDomain(domain: String): Boolean {
-        if (domain.isBlank()) {
-            return false
-        }
-
-        val hostUri = normalizeDomain(domain).toUri()
-
-        return !(hostUri.scheme == null || hostUri.host == null || hostUri.query != null)
-    }
-
-    private fun normalizeDomain(domain: String): String {
-        return if (!domain.startsWith("https://") && !domain.startsWith("http://")) {
-            "https://$domain"
-        } else {
-            domain
-        }
+        return DOMAIN_REGEX.matches(domain)
     }
 }
