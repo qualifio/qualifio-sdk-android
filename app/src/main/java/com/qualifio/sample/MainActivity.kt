@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
             if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) return@launch
 
             try {
-                Qualifio.launchCampaign()
+                Qualifio.launchCampaign(SAMPLE_CAMPAIGN)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to launch campaign")
             }

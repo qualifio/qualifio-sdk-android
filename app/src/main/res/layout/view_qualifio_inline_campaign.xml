@@ -1,37 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.qualifio.views.QualifioInlineCampaignView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/qualifioInlineCampaignView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical">
-
-    <com.qualifio.views.QualifioInlineCampaignView
-        android:id="@+id/qualifioInlineCampaignView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:qualifioAutoScrollOnPageLoadEnabled="true"
-        app:qualifioCampaign="sdk" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/loadDefaultCampaignButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
-            android:layout_weight="1"
-            android:text="@string/home_inline_campaign_default_button" />
-
-        <Button
-            android:id="@+id/loadXmasCampaignButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_weight="1"
-            android:text="@string/home_inline_campaign_xmas_button" />
-    </LinearLayout>
-</LinearLayout>
+    app:qualifioAutoScrollOnPageLoadEnabled="true"
+    app:qualifioCampaign="sdk-xmas" />

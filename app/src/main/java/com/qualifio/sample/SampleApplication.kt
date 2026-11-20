@@ -17,6 +17,8 @@ import javax.inject.Inject
 private const val CAMPAIGN_ID_CLAIM = "campaignId"
 private const val FORM_CLAIM = "form"
 
+internal const val SAMPLE_CAMPAIGN = "sdk-xmas"
+
 @HiltAndroidApp
 class SampleApplication : Application() {
     @Inject
