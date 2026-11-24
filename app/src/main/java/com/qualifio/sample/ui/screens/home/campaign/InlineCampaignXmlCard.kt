@@ -1,8 +1,6 @@
 package com.qualifio.sample.ui.screens.home.campaign
 
 import android.view.LayoutInflater
-import android.view.View
-import android.widget.Button
 import android.widget.FrameLayout
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,13 +20,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.qualifio.Qualifio
 import com.qualifio.sample.R
+import com.qualifio.sample.SAMPLE_CAMPAIGN
 import com.qualifio.sample.ui.theme.Typography
 import com.qualifio.views.QualifioInlineCampaignView
 
 @Composable
-fun InlineCampaignXmlCard() {
+fun InlineCampaignXmlCard(
+    campaign: String,
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -58,11 +58,17 @@ fun InlineCampaignXmlCard() {
             AndroidView(
                 modifier = Modifier.fillMaxWidth(),
                 factory = { context ->
-                    val parent = FrameLayout(context)
-
                     LayoutInflater.from(context)
-                        .inflate(R.layout.view_qualifio_inline_campaign, parent, false)
-                        .bindCampaignButtons()
+                        .inflate(R.layout.view_qualifio_inline_campaign, FrameLayout(context), false)
+                        as QualifioInlineCampaignView
+                },
+                update = { view ->
+                    if (view.campaign != campaign) {
+                        view.loadCampaign(campaign)
+                    }
+                },
+                onRelease = { view ->
+                    view.destroy()
                 },
             )
         }
@@ -72,19 +78,5 @@ fun InlineCampaignXmlCard() {
 @Preview
 @Composable
 fun InlineCampaignXmlCardPreview() {
-    InlineCampaignXmlCard()
-}
-
-private fun View.bindCampaignButtons(): View {
-    val campaignView = findViewById<QualifioInlineCampaignView>(R.id.qualifioInlineCampaignView)
-
-    findViewById<Button>(R.id.loadDefaultCampaignButton).setOnClickListener {
-        campaignView.loadCampaign(Qualifio.DEFAULT_CAMPAIGN)
-    }
-
-    findViewById<Button>(R.id.loadXmasCampaignButton).setOnClickListener {
-        campaignView.loadCampaign("sdk-xmas")
-    }
-
-    return this
+    InlineCampaignXmlCard(campaign = SAMPLE_CAMPAIGN)
 }

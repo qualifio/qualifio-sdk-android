@@ -3,6 +3,7 @@ package com.qualifio.views
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Rect
 import android.net.Uri
@@ -18,6 +19,8 @@ import androidx.core.view.doOnLayout
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import com.qualifio.Qualifio
 import com.qualifio.R
 import com.qualifio.internal.logger
@@ -91,8 +94,7 @@ public class QualifioInlineCampaignView private constructor(
     private var pendingCampaign: String? = null
     private var currentLoadRequestId: Int = 0
     private var lastReportedHeightPx: Int = 0
-    private var acceptsContentHeightReports: Boolean = false
-    private var didLoadInitialPage: Boolean = false
+    private var loadPhase: LoadPhase = LoadPhase.PREPARING
     private var hostLifecycle: Lifecycle? = null
     private var isDestroyed: Boolean = false
 
@@ -138,18 +140,33 @@ public class QualifioInlineCampaignView private constructor(
                 }
             }
 
+            override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+                when (loadPhase) {
+                    LoadPhase.STARTING -> loadPhase = LoadPhase.FIRST_PAGE
+
+                    LoadPhase.LOADED -> {
+                        if (autoScrollOnPageLoadEnabled) {
+                            scrollContainingScrollViewToTop()
+                        }
+                    }
+
+                    // The previous page navigating before loadUrl, or a redirect of the first page.
+                    LoadPhase.PREPARING, LoadPhase.FIRST_PAGE -> Unit
+                }
+            }
+
             override fun onPageFinished(view: WebView, url: String) {
-                acceptsContentHeightReports = true
-                reportContentHeightFromDocument()
+                when (loadPhase) {
+                    LoadPhase.FIRST_PAGE -> loadPhase = LoadPhase.LOADED
 
-                if (!didLoadInitialPage) {
-                    didLoadInitialPage = true
-                    return
+                    LoadPhase.LOADED -> Unit
+
+                    // A late finish from the page replaced by a new load.
+                    LoadPhase.PREPARING, LoadPhase.STARTING -> return
                 }
 
-                if (autoScrollOnPageLoadEnabled) {
-                    scrollContainingScrollViewToTop()
-                }
+                // Catches up on the first page, and is the fallback when the document-start script didn't run.
+                evaluateContentHeightScript()
             }
         }
 
@@ -254,7 +271,6 @@ public class QualifioInlineCampaignView private constructor(
         }
 
         isDestroyed = true
-        acceptsContentHeightReports = false
         viewScope.cancel()
 
         hostLifecycle?.removeObserver(lifecycleObserver)
@@ -270,7 +286,7 @@ public class QualifioInlineCampaignView private constructor(
         val loadRequestId = ++currentLoadRequestId
         loadJob?.cancel()
         lastReportedHeightPx = 0
-        acceptsContentHeightReports = false
+        loadPhase = LoadPhase.PREPARING
         applyLoadingLayout()
 
         loadJob = viewScope.launch {
@@ -293,7 +309,7 @@ public class QualifioInlineCampaignView private constructor(
                     return@doOnLayout
                 }
 
-                didLoadInitialPage = false
+                loadPhase = LoadPhase.STARTING
                 webView.loadUrl(url.toString())
             }
         }
@@ -347,6 +363,11 @@ public class QualifioInlineCampaignView private constructor(
         webView.settings.domStorageEnabled = true
         webView.settings.javaScriptEnabled = true
         webView.addJavascriptInterface(ContentHeightBridge(), CONTENT_HEIGHT_BRIDGE_NAME)
+
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            WebViewCompat.addDocumentStartJavaScript(webView, CONTENT_HEIGHT_SCRIPT, setOf("*"))
+        }
+
         webView.setBackgroundColor(Color.TRANSPARENT)
         webView.webViewClient = inlineWebViewClient
 
@@ -424,9 +445,9 @@ public class QualifioInlineCampaignView private constructor(
         }
     }
 
-    private fun reportContentHeightFromDocument() {
+    private fun evaluateContentHeightScript() {
         webView.evaluateJavascript(
-            "$CONTENT_HEIGHT_SCRIPT();",
+            CONTENT_HEIGHT_SCRIPT,
             null,
         )
     }
@@ -434,16 +455,24 @@ public class QualifioInlineCampaignView private constructor(
     private inner class ContentHeightBridge {
         @JavascriptInterface
         fun postContentHeight(heightString: String) {
-            val height = heightString.toFloatOrNull() ?: return
+            val height = heightString.toFloatOrNull()?.takeIf { it.isFinite() } ?: return
 
             webView.post {
-                if (!acceptsContentHeightReports) {
+                // Drops reports until the new campaign's first page has finished.
+                if (isDestroyed || loadPhase != LoadPhase.LOADED) {
                     return@post
                 }
 
                 reportContentHeight(height)
             }
         }
+    }
+
+    private enum class LoadPhase {
+        PREPARING,
+        STARTING,
+        FIRST_PAGE,
+        LOADED,
     }
 
     private data class InlineCampaignConfiguration(
@@ -455,133 +484,33 @@ public class QualifioInlineCampaignView private constructor(
         private const val CONTENT_HEIGHT_BRIDGE_NAME = "QualifioInlineCampaignView"
         private const val CONTENT_HEIGHT_SCRIPT = """
             (function() {
-              if (window.__qualifioInlineCampaignHeightObserver) {
-                window.__qualifioInlineCampaignHeightObserver.report();
+              if (window !== window.top) {
                 return;
               }
 
-              var measureDocument = function(
-                targetDocument,
-                targetWindow,
-                correctIframeHeight
-              ) {
-                var body = targetDocument.body;
-                var scrollY = targetWindow ? targetWindow.pageYOffset || 0 : 0;
-                var height = 0;
+              if (!window.__qualifioInlineCampaignHeightListener) {
+                window.__qualifioInlineCampaignHeightListener = true;
 
-                if (body) {
-                  var elements = body.querySelectorAll('*');
-                  for (var i = 0; i < elements.length; i += 1) {
-                    height = Math.max(
-                      height,
-                      elements[i].getBoundingClientRect().bottom + scrollY
-                    );
+                window.addEventListener('message', function(event) {
+                  var data = event.data;
+                  if (
+                    event.source !== window ||
+                    !data ||
+                    data.type !== 'embed-size' ||
+                    typeof data.height !== 'number'
+                  ) {
+                    return;
                   }
-                }
 
-                if (height <= 0) {
-                  var documentElement = targetDocument.documentElement;
-                  height = Math.max(
-                    body ? body.scrollHeight : 0,
-                    documentElement ? documentElement.scrollHeight : 0,
-                    body ? body.offsetHeight : 0,
-                    documentElement ? documentElement.offsetHeight : 0
-                  );
-                }
-
-                if (correctIframeHeight && body) {
-                  var iframes = body.querySelectorAll('iframe');
-                  if (iframes.length === 1) {
-                    var iframe = iframes[0];
-                    var hasDeclaredHeight =
-                      iframe.style.height !== '' || iframe.hasAttribute('height');
-                    if (hasDeclaredHeight) {
-                      try {
-                        var iframeDocument = iframe.contentDocument;
-                        if (iframeDocument) {
-                          if (
-                            !iframeDocument.body ||
-                            iframeDocument.body.children.length === 0
-                          ) {
-                            return 0;
-                          }
-
-                          var contentHeight = measureDocument(
-                            iframeDocument,
-                            iframe.contentWindow,
-                            false
-                          );
-                          if (contentHeight <= 0) {
-                            return 0;
-                          }
-
-                          height +=
-                            contentHeight - iframe.getBoundingClientRect().height;
-                        }
-                      } catch (error) {
-                        // Cross-origin frames keep their rendered outer size.
-                      }
-                    }
-                  }
-                }
-
-                return height;
-              };
-
-              var lastHeight = 0;
-              var reportScheduled = false;
-              var postContentHeight = function(height) {
-                if (height === lastHeight) {
-                  return;
-                }
-
-                lastHeight = height;
-                if (window.QualifioInlineCampaignView && window.QualifioInlineCampaignView.postContentHeight) {
-                  window.QualifioInlineCampaignView.postContentHeight(height.toString());
-                }
-              };
-
-              var report = function() {
-                if (reportScheduled) {
-                  return;
-                }
-
-                reportScheduled = true;
-                window.requestAnimationFrame(function() {
-                  reportScheduled = false;
-                  postContentHeight(measureDocument(document, window, true));
-                });
-              };
-
-              window.__qualifioInlineCampaignHeightObserver = { report: report };
-
-              if (window.ResizeObserver) {
-                var resizeObserver = new ResizeObserver(report);
-                resizeObserver.observe(document.documentElement);
-                if (document.body) {
-                  resizeObserver.observe(document.body);
-                }
-              }
-
-              if (window.MutationObserver) {
-                var mutationObserver = new MutationObserver(report);
-                mutationObserver.observe(document.documentElement, {
-                  attributes: true,
-                  childList: true,
-                  subtree: true
+                  window.$CONTENT_HEIGHT_BRIDGE_NAME.postContentHeight(data.height.toString());
                 });
               }
 
-              window.addEventListener('load', report);
-              window.addEventListener('resize', report);
-
-              var iframes = document.querySelectorAll('iframe');
-              if (iframes.length === 1) {
-                iframes[0].addEventListener('load', report);
+              // Earlier reports may have been missed or dropped, so ask for the current height.
+              if (window.parentIFrame && typeof window.parentIFrame.size === 'function') {
+                window.parentIFrame.size();
               }
-
-              report();
-            })
+            })()
         """
     }
 }
